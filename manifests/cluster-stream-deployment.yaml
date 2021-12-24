@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streaming-runtime
+spec:
+  selector:
+    matchLabels:
+      app: streaming-runtime
+  template:
+    metadata:
+      labels:
+        app: streaming-runtime
+    spec:
+      serviceAccountName: streaming-runtime
+      containers:
+        - name: cluster-stream-operator
+          image: tzolov/streaming-runtime
+          env:
+            - name: LOGGING_LEVEL_COM_EXAMPLE_OPERATOR
+              value: debug
+#            - name: ADOPTION_CENTER_IMAGE
+#              value: springcloudservices/adoption-center:latest
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

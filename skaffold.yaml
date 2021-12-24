@@ -1,0 +1,33 @@
+apiVersion: skaffold/v2beta21
+kind: Config
+
+build:
+  artifacts:
+    - image: tzolov/streaming-runtime
+      custom:
+        buildCommand: |
+          ./gradlew :with-kubernetes-java-client:bootBuildImage \
+          --imageName="$IMAGE" --builder="gcr.io/paketo-buildpacks/builder:base"
+        dependencies:
+          paths:
+            - with-kubernetes-java-client/src/main/**
+            - with-kubernetes-java-client/build.gradle.kts
+            - build.gradle.kts
+#    - image: springcloudservices/adoption-center
+#      context: adoption-center
+#      buildpacks:
+#        builder: gcr.io/paketo-buildpacks/builder:base
+#        dependencies:
+#          paths:
+#            - src/main/**
+#            - build.gradle.kts
+deploy:
+  kubectl:
+    manifests:
+      - ./streaming-runtime-crds/cluster-stream-crd.yaml
+    flags:
+      apply:
+        - --force
+  kustomize:
+    paths:
+      - manifests

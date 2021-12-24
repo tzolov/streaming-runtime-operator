@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: streaming-runtime-cluster-role
+rules:
+  - apiGroups:
+      - streaming.tanzu.vmware.com
+    resources:
+      - clusterstreams
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+
+  - apiGroups:
+      - streaming.tanzu.vmware.com
+    resources:
+      - clusterstream/status
+    verbs:
+      - patch
+
+  - apiGroups:
+      - "events.k8s.io"
+    resources:
+      - events
+    verbs:
+      - create
