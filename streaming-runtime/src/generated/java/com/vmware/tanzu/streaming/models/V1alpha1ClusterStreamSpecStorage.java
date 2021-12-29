@@ -20,22 +20,23 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorageAttributes;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorageServers;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * V1alpha1ClusterStreamSpecStorage
  */
-
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
 public class V1alpha1ClusterStreamSpecStorage {
   public static final String SERIALIZED_NAME_ATTRIBUTES = "attributes";
   @SerializedName(SERIALIZED_NAME_ATTRIBUTES)
-  private List<V1alpha1ClusterStreamSpecStorageAttributes> attributes = null;
+  private Map<String, String> attributes = null;
 
   public static final String SERIALIZED_NAME_RECLAIM_POLICY = "reclaimPolicy";
   @SerializedName(SERIALIZED_NAME_RECLAIM_POLICY)
@@ -46,17 +47,17 @@ public class V1alpha1ClusterStreamSpecStorage {
   private List<V1alpha1ClusterStreamSpecStorageServers> servers = null;
 
 
-  public V1alpha1ClusterStreamSpecStorage attributes(List<V1alpha1ClusterStreamSpecStorageAttributes> attributes) {
+  public V1alpha1ClusterStreamSpecStorage attributes(Map<String, String> attributes) {
     
     this.attributes = attributes;
     return this;
   }
 
-  public V1alpha1ClusterStreamSpecStorage addAttributesItem(V1alpha1ClusterStreamSpecStorageAttributes attributesItem) {
+  public V1alpha1ClusterStreamSpecStorage putAttributesItem(String key, String attributesItem) {
     if (this.attributes == null) {
-      this.attributes = new ArrayList<>();
+      this.attributes = new HashMap<>();
     }
-    this.attributes.add(attributesItem);
+    this.attributes.put(key, attributesItem);
     return this;
   }
 
@@ -67,12 +68,12 @@ public class V1alpha1ClusterStreamSpecStorage {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public List<V1alpha1ClusterStreamSpecStorageAttributes> getAttributes() {
+  public Map<String, String> getAttributes() {
     return attributes;
   }
 
 
-  public void setAttributes(List<V1alpha1ClusterStreamSpecStorageAttributes> attributes) {
+  public void setAttributes(Map<String, String> attributes) {
     this.attributes = attributes;
   }
 

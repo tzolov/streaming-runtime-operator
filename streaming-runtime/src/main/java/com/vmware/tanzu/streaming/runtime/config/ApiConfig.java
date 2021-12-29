@@ -1,4 +1,4 @@
-package com.vmware.tanzu.streaming.streamingruntime;
+package com.vmware.tanzu.streaming.runtime.config;
 
 import java.io.IOException;
 import java.time.Duration;

@@ -20,7 +20,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorage;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecStorage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
@@ -28,30 +28,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * V1alpha1ClusterStreamSpec
+ * V1alpha1StreamSpec
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
-public class V1alpha1ClusterStreamSpec {
+public class V1alpha1StreamSpec {
   public static final String SERIALIZED_NAME_KEYS = "keys";
   @SerializedName(SERIALIZED_NAME_KEYS)
   private List<String> keys = null;
 
   public static final String SERIALIZED_NAME_STORAGE = "storage";
   @SerializedName(SERIALIZED_NAME_STORAGE)
-  private V1alpha1ClusterStreamSpecStorage storage;
+  private V1alpha1StreamSpecStorage storage;
 
   public static final String SERIALIZED_NAME_STREAM_MODES = "streamModes";
   @SerializedName(SERIALIZED_NAME_STREAM_MODES)
   private List<String> streamModes = null;
 
 
-  public V1alpha1ClusterStreamSpec keys(List<String> keys) {
+  public V1alpha1StreamSpec keys(List<String> keys) {
     
     this.keys = keys;
     return this;
   }
 
-  public V1alpha1ClusterStreamSpec addKeysItem(String keysItem) {
+  public V1alpha1StreamSpec addKeysItem(String keysItem) {
     if (this.keys == null) {
       this.keys = new ArrayList<>();
     }
@@ -76,7 +76,7 @@ public class V1alpha1ClusterStreamSpec {
   }
 
 
-  public V1alpha1ClusterStreamSpec storage(V1alpha1ClusterStreamSpecStorage storage) {
+  public V1alpha1StreamSpec storage(V1alpha1StreamSpecStorage storage) {
     
     this.storage = storage;
     return this;
@@ -89,23 +89,23 @@ public class V1alpha1ClusterStreamSpec {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1alpha1ClusterStreamSpecStorage getStorage() {
+  public V1alpha1StreamSpecStorage getStorage() {
     return storage;
   }
 
 
-  public void setStorage(V1alpha1ClusterStreamSpecStorage storage) {
+  public void setStorage(V1alpha1StreamSpecStorage storage) {
     this.storage = storage;
   }
 
 
-  public V1alpha1ClusterStreamSpec streamModes(List<String> streamModes) {
+  public V1alpha1StreamSpec streamModes(List<String> streamModes) {
     
     this.streamModes = streamModes;
     return this;
   }
 
-  public V1alpha1ClusterStreamSpec addStreamModesItem(String streamModesItem) {
+  public V1alpha1StreamSpec addStreamModesItem(String streamModesItem) {
     if (this.streamModes == null) {
       this.streamModes = new ArrayList<>();
     }
@@ -138,10 +138,10 @@ public class V1alpha1ClusterStreamSpec {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpec v1alpha1ClusterStreamSpec = (V1alpha1ClusterStreamSpec) o;
-    return Objects.equals(this.keys, v1alpha1ClusterStreamSpec.keys) &&
-        Objects.equals(this.storage, v1alpha1ClusterStreamSpec.storage) &&
-        Objects.equals(this.streamModes, v1alpha1ClusterStreamSpec.streamModes);
+    V1alpha1StreamSpec v1alpha1StreamSpec = (V1alpha1StreamSpec) o;
+    return Objects.equals(this.keys, v1alpha1StreamSpec.keys) &&
+        Objects.equals(this.storage, v1alpha1StreamSpec.storage) &&
+        Objects.equals(this.streamModes, v1alpha1StreamSpec.streamModes);
   }
 
   @Override
@@ -153,7 +153,7 @@ public class V1alpha1ClusterStreamSpec {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpec {\n");
+    sb.append("class V1alpha1StreamSpec {\n");
     sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
     sb.append("    storage: ").append(toIndentedString(storage)).append("\n");
     sb.append("    streamModes: ").append(toIndentedString(streamModes)).append("\n");

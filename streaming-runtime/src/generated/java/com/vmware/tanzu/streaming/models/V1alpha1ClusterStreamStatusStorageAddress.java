@@ -20,67 +20,52 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusStorageAddressServers;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * V1alpha1ClusterStreamSpecStorageServers
+ * V1alpha1ClusterStreamStatusStorageAddress
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
-public class V1alpha1ClusterStreamSpecStorageServers {
-  public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
-  @SerializedName(SERIALIZED_NAME_PROTOCOL)
-  private String protocol;
-
-  public static final String SERIALIZED_NAME_URL = "url";
-  @SerializedName(SERIALIZED_NAME_URL)
-  private String url;
+public class V1alpha1ClusterStreamStatusStorageAddress {
+  public static final String SERIALIZED_NAME_SERVERS = "servers";
+  @SerializedName(SERIALIZED_NAME_SERVERS)
+  private Map<String, V1alpha1ClusterStreamStatusStorageAddressServers> servers = null;
 
 
-  public V1alpha1ClusterStreamSpecStorageServers protocol(String protocol) {
+  public V1alpha1ClusterStreamStatusStorageAddress servers(Map<String, V1alpha1ClusterStreamStatusStorageAddressServers> servers) {
     
-    this.protocol = protocol;
+    this.servers = servers;
+    return this;
+  }
+
+  public V1alpha1ClusterStreamStatusStorageAddress putServersItem(String key, V1alpha1ClusterStreamStatusStorageAddressServers serversItem) {
+    if (this.servers == null) {
+      this.servers = new HashMap<>();
+    }
+    this.servers.put(key, serversItem);
     return this;
   }
 
    /**
-   * Get protocol
-   * @return protocol
+   * Get servers
+   * @return servers
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public String getProtocol() {
-    return protocol;
+  public Map<String, V1alpha1ClusterStreamStatusStorageAddressServers> getServers() {
+    return servers;
   }
 
 
-  public void setProtocol(String protocol) {
-    this.protocol = protocol;
-  }
-
-
-  public V1alpha1ClusterStreamSpecStorageServers url(String url) {
-    
-    this.url = url;
-    return this;
-  }
-
-   /**
-   * Get url
-   * @return url
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public String getUrl() {
-    return url;
-  }
-
-
-  public void setUrl(String url) {
-    this.url = url;
+  public void setServers(Map<String, V1alpha1ClusterStreamStatusStorageAddressServers> servers) {
+    this.servers = servers;
   }
 
 
@@ -92,23 +77,21 @@ public class V1alpha1ClusterStreamSpecStorageServers {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpecStorageServers v1alpha1ClusterStreamSpecStorageServers = (V1alpha1ClusterStreamSpecStorageServers) o;
-    return Objects.equals(this.protocol, v1alpha1ClusterStreamSpecStorageServers.protocol) &&
-        Objects.equals(this.url, v1alpha1ClusterStreamSpecStorageServers.url);
+    V1alpha1ClusterStreamStatusStorageAddress v1alpha1ClusterStreamStatusStorageAddress = (V1alpha1ClusterStreamStatusStorageAddress) o;
+    return Objects.equals(this.servers, v1alpha1ClusterStreamStatusStorageAddress.servers);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(protocol, url);
+    return Objects.hash(servers);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpecStorageServers {\n");
-    sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
-    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("class V1alpha1ClusterStreamStatusStorageAddress {\n");
+    sb.append("    servers: ").append(toIndentedString(servers)).append("\n");
     sb.append("}");
     return sb.toString();
   }

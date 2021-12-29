@@ -1,14 +1,10 @@
-package com.vmware.tanzu.streaming.streamingruntime;
+package com.vmware.tanzu.streaming.runtime.protocol;
 
 import java.io.IOException;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -16,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.util.PatchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 @Component
-public class KafkaDeploymentEditor {
+public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 
 	private static final Logger LOG = LoggerFactory.getLogger(KafkaDeploymentEditor.class);
 
@@ -45,7 +40,13 @@ public class KafkaDeploymentEditor {
 		this.yamlMapper = yamlMapper;
 	}
 
-	public boolean createKafka(V1OwnerReference ownerReference) throws IOException, ApiException {
+	@Override
+	public String getProtocolName() {
+		return "kafka";
+	}
+
+	@Override
+	public boolean create(V1OwnerReference ownerReference) throws IOException, ApiException {
 
 		boolean changed = false;
 		if (CollectionUtils.isEmpty(findServices("default", null,"app=kafka"))) {
@@ -66,9 +67,28 @@ public class KafkaDeploymentEditor {
 		return changed;
 	}
 
+	@Override
 	public boolean isAllRunning(V1OwnerReference ownerReference) throws ApiException {
 		int size = findPods("default", "status.phase=Running", "app in (kafka,kafka-zk)").size();
 		return size == 2;
+	}
+
+	@Override
+	public String storageAddress(V1OwnerReference ownerReference) throws ApiException {
+		return ""+
+				"\"storageAddress\": { " +
+				"   \"servers\": {" +
+				"     \"production\": {" +
+				"         \"url\": \"localhost:8080\", " +
+				"         \"protocol\": \"kafka\", " +
+				"         \"protocolVersion\": \"1.0.0\", " +
+				"         \"variables\": { " +
+				"              \"brokers\": \"kafka:9092\", " +
+				"              \"zkNodes\": \"kafka-zk:2181\" " +
+				"           } " +
+				"       } " +
+				"   } " +
+				"}";
 	}
 
 	private List<V1Pod> findPods(String namesapce, String fieldSelector, String labelSelector) throws ApiException {

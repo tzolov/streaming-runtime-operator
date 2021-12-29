@@ -17,14 +17,11 @@
 # This script orchestrates the code generation procedure. It is executed inside a crdgen
 # container in order to minimize the environment dependencies on the host, being Docker only.
 
-CRD_URLS=${CRD_URLS:/Users/ctzolov/Dev/projects/tanzu/streaming-runtime-parent/streaming-runtime-crds/cluster-stream-crd.yaml}
-#OUTPUT_DIR=${OUTPUT_DIR:-}
-OUTPUT_DIR=${OUTPUT_DIR:.}
-#KUBERNETES_CRD_GROUP_PREFIX=${KUBERNETES_CRD_GROUP_PREFIX:-}
-#PACKAGE_NAME=${PACKAGE_NAME:-}
-KUBERNETES_CRD_GROUP_PREFIX=${KUBERNETES_CRD_GROUP_PREFIX:com.vmware.tanzu.streaming}
-PACKAGE_NAME=${PACKAGE_NAME:com.vmware.tanzu.streaming}
+OUTPUT_DIR=${OUTPUT_DIR:-}
+KUBERNETES_CRD_GROUP_PREFIX=${KUBERNETES_CRD_GROUP_PREFIX:-}
+PACKAGE_NAME=${PACKAGE_NAME:-}
 CLIENT_GEN_DIR="/tmp/kubernetes-client-gen"
+CURRENT_KUBECTL_CONTEXT=$(kubectl config current-context)
 
 print_usage() {
   echo "Usage: generate Java model classes from CRDs" >& 2
@@ -51,6 +48,7 @@ set -e
 #kind create cluster
 # We need to ensure the kubernetes cluster is 1.19 in order to generate API classes see https://github.com/kubernetes-client/java/issues/1710
 kind create cluster --name crd-gen --image kindest/node:v1.19.11@sha256:cbecc517bfad65e368cd7975d1e8a4f558d91160c051d0b1d10ff81488f5fb06
+kubectl config use-context kind-crd-gen
 
 # install CRDs to the KinD cluster and dump the swagger spec
 for url in "${CRD_URLS[@]}"; do
@@ -82,6 +80,7 @@ kubectl get crd -o name \
 
 # destroy the KinD cluster
 kind delete cluster --name crd-gen
+kubectl config use-context "$CURRENT_KUBECTL_CONTEXT"
 
 rm -Rf $CLIENT_GEN_DIR
 git clone https://github.com/kubernetes-client/gen ${CLIENT_GEN_DIR}|| true
@@ -90,7 +89,7 @@ cd $CLIENT_GEN_DIR/openapi
 # execute the generation script
 bash java-crd-cmd.sh -n "${KUBERNETES_CRD_GROUP_PREFIX}" -p "${PACKAGE_NAME}" -l 2 -o "${CLIENT_GEN_DIR}/gen" -g true < /tmp/swagger
 
-# only keep the model classes
+# only keep the api and model classes
 rm -Rf "${OUTPUT_DIR}/src/generated/java/${PACKAGE_NAME//.//}"
 mkdir -p "${OUTPUT_DIR}/src/generated/java/${PACKAGE_NAME//.//}"
 cp -r "${CLIENT_GEN_DIR}/gen/src/main/java/${PACKAGE_NAME//.//}/models" "${OUTPUT_DIR}/src/generated/java/${PACKAGE_NAME//.//}"

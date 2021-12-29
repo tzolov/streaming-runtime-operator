@@ -1,4 +1,4 @@
-package com.vmware.tanzu.streaming.streamingruntime;
+package com.vmware.tanzu.streaming.runtime.config;
 
 import io.kubernetes.client.extended.controller.Controller;
 import io.kubernetes.client.extended.controller.ControllerManager;
@@ -24,7 +24,12 @@ public class StreamingRuntimeConfiguration {
 	CommandLineRunner commandLineRunner(ControllerManager controllerManager) {
 		return args -> {
 			LOG.info("Start ControllerManager");
-			new Thread(controllerManager, "ControllerManager").start();
+			try {
+				new Thread(controllerManager, "ControllerManager").start();
+			}
+			catch (Exception exception) {
+				LOG.info("Exit ControllerManager");
+			}
 		};
 	}
 }

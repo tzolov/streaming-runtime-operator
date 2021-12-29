@@ -1,7 +1,8 @@
-package com.vmware.tanzu.streaming.streamingruntime;
+package com.vmware.tanzu.streaming.runtime.config;
 
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamList;
+import com.vmware.tanzu.streaming.runtime.ClusterStreamReconciler;
 import io.kubernetes.client.extended.controller.Controller;
 import io.kubernetes.client.extended.controller.DefaultControllerWatch;
 import io.kubernetes.client.extended.controller.builder.ControllerBuilder;

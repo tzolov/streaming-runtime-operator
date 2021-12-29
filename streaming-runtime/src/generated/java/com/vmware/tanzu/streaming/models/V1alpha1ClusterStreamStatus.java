@@ -21,6 +21,7 @@ import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusConditions;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusStorageAddress;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.util.List;
 /**
  * V1alpha1ClusterStreamStatus
  */
-
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
 public class V1alpha1ClusterStreamStatus {
   public static final String SERIALIZED_NAME_CONDITIONS = "conditions";
   @SerializedName(SERIALIZED_NAME_CONDITIONS)
@@ -38,7 +39,7 @@ public class V1alpha1ClusterStreamStatus {
 
   public static final String SERIALIZED_NAME_STORAGE_ADDRESS = "storageAddress";
   @SerializedName(SERIALIZED_NAME_STORAGE_ADDRESS)
-  private String storageAddress;
+  private V1alpha1ClusterStreamStatusStorageAddress storageAddress;
 
 
   public V1alpha1ClusterStreamStatus conditions(List<V1alpha1ClusterStreamStatusConditions> conditions) {
@@ -72,7 +73,7 @@ public class V1alpha1ClusterStreamStatus {
   }
 
 
-  public V1alpha1ClusterStreamStatus storageAddress(String storageAddress) {
+  public V1alpha1ClusterStreamStatus storageAddress(V1alpha1ClusterStreamStatusStorageAddress storageAddress) {
     
     this.storageAddress = storageAddress;
     return this;
@@ -85,12 +86,12 @@ public class V1alpha1ClusterStreamStatus {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public String getStorageAddress() {
+  public V1alpha1ClusterStreamStatusStorageAddress getStorageAddress() {
     return storageAddress;
   }
 
 
-  public void setStorageAddress(String storageAddress) {
+  public void setStorageAddress(V1alpha1ClusterStreamStatusStorageAddress storageAddress) {
     this.storageAddress = storageAddress;
   }
 

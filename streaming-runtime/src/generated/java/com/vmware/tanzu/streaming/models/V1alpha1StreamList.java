@@ -20,21 +20,27 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpec;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatus;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import com.vmware.tanzu.streaming.models.V1alpha1Stream;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * V1alpha1ClusterStream
+ * StreamList is a list of Stream
  */
+@ApiModel(description = "StreamList is a list of Stream")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
-public class V1alpha1ClusterStream implements io.kubernetes.client.common.KubernetesObject {
+public class V1alpha1StreamList implements io.kubernetes.client.common.KubernetesListObject {
   public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
   @SerializedName(SERIALIZED_NAME_API_VERSION)
   private String apiVersion;
+
+  public static final String SERIALIZED_NAME_ITEMS = "items";
+  @SerializedName(SERIALIZED_NAME_ITEMS)
+  private List<V1alpha1Stream> items = new ArrayList<>();
 
   public static final String SERIALIZED_NAME_KIND = "kind";
   @SerializedName(SERIALIZED_NAME_KIND)
@@ -42,18 +48,10 @@ public class V1alpha1ClusterStream implements io.kubernetes.client.common.Kubern
 
   public static final String SERIALIZED_NAME_METADATA = "metadata";
   @SerializedName(SERIALIZED_NAME_METADATA)
-  private V1ObjectMeta metadata = null;
-
-  public static final String SERIALIZED_NAME_SPEC = "spec";
-  @SerializedName(SERIALIZED_NAME_SPEC)
-  private V1alpha1ClusterStreamSpec spec;
-
-  public static final String SERIALIZED_NAME_STATUS = "status";
-  @SerializedName(SERIALIZED_NAME_STATUS)
-  private V1alpha1ClusterStreamStatus status;
+  private V1ListMeta metadata = null;
 
 
-  public V1alpha1ClusterStream apiVersion(String apiVersion) {
+  public V1alpha1StreamList apiVersion(String apiVersion) {
     
     this.apiVersion = apiVersion;
     return this;
@@ -76,7 +74,34 @@ public class V1alpha1ClusterStream implements io.kubernetes.client.common.Kubern
   }
 
 
-  public V1alpha1ClusterStream kind(String kind) {
+  public V1alpha1StreamList items(List<V1alpha1Stream> items) {
+    
+    this.items = items;
+    return this;
+  }
+
+  public V1alpha1StreamList addItemsItem(V1alpha1Stream itemsItem) {
+    this.items.add(itemsItem);
+    return this;
+  }
+
+   /**
+   * List of streams. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md
+   * @return items
+  **/
+  @ApiModelProperty(required = true, value = "List of streams. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md")
+
+  public List<V1alpha1Stream> getItems() {
+    return items;
+  }
+
+
+  public void setItems(List<V1alpha1Stream> items) {
+    this.items = items;
+  }
+
+
+  public V1alpha1StreamList kind(String kind) {
     
     this.kind = kind;
     return this;
@@ -99,7 +124,7 @@ public class V1alpha1ClusterStream implements io.kubernetes.client.common.Kubern
   }
 
 
-  public V1alpha1ClusterStream metadata(V1ObjectMeta metadata) {
+  public V1alpha1StreamList metadata(V1ListMeta metadata) {
     
     this.metadata = metadata;
     return this;
@@ -112,59 +137,13 @@ public class V1alpha1ClusterStream implements io.kubernetes.client.common.Kubern
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1ObjectMeta getMetadata() {
+  public V1ListMeta getMetadata() {
     return metadata;
   }
 
 
-  public void setMetadata(V1ObjectMeta metadata) {
+  public void setMetadata(V1ListMeta metadata) {
     this.metadata = metadata;
-  }
-
-
-  public V1alpha1ClusterStream spec(V1alpha1ClusterStreamSpec spec) {
-    
-    this.spec = spec;
-    return this;
-  }
-
-   /**
-   * Get spec
-   * @return spec
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public V1alpha1ClusterStreamSpec getSpec() {
-    return spec;
-  }
-
-
-  public void setSpec(V1alpha1ClusterStreamSpec spec) {
-    this.spec = spec;
-  }
-
-
-  public V1alpha1ClusterStream status(V1alpha1ClusterStreamStatus status) {
-    
-    this.status = status;
-    return this;
-  }
-
-   /**
-   * Get status
-   * @return status
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public V1alpha1ClusterStreamStatus getStatus() {
-    return status;
-  }
-
-
-  public void setStatus(V1alpha1ClusterStreamStatus status) {
-    this.status = status;
   }
 
 
@@ -176,29 +155,27 @@ public class V1alpha1ClusterStream implements io.kubernetes.client.common.Kubern
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStream v1alpha1ClusterStream = (V1alpha1ClusterStream) o;
-    return Objects.equals(this.apiVersion, v1alpha1ClusterStream.apiVersion) &&
-        Objects.equals(this.kind, v1alpha1ClusterStream.kind) &&
-        Objects.equals(this.metadata, v1alpha1ClusterStream.metadata) &&
-        Objects.equals(this.spec, v1alpha1ClusterStream.spec) &&
-        Objects.equals(this.status, v1alpha1ClusterStream.status);
+    V1alpha1StreamList v1alpha1StreamList = (V1alpha1StreamList) o;
+    return Objects.equals(this.apiVersion, v1alpha1StreamList.apiVersion) &&
+        Objects.equals(this.items, v1alpha1StreamList.items) &&
+        Objects.equals(this.kind, v1alpha1StreamList.kind) &&
+        Objects.equals(this.metadata, v1alpha1StreamList.metadata);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(apiVersion, kind, metadata, spec, status);
+    return Objects.hash(apiVersion, items, kind, metadata);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStream {\n");
+    sb.append("class V1alpha1StreamList {\n");
     sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
+    sb.append("    items: ").append(toIndentedString(items)).append("\n");
     sb.append("    kind: ").append(toIndentedString(kind)).append("\n");
     sb.append("    metadata: ").append(toIndentedString(metadata)).append("\n");
-    sb.append("    spec: ").append(toIndentedString(spec)).append("\n");
-    sb.append("    status: ").append(toIndentedString(status)).append("\n");
     sb.append("}");
     return sb.toString();
   }

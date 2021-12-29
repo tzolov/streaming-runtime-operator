@@ -25,62 +25,35 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1ClusterStreamSpecStorageAttributes
+ * V1alpha1StreamSpecStorage
  */
-
-public class V1alpha1ClusterStreamSpecStorageAttributes {
-  public static final String SERIALIZED_NAME_KEY = "key";
-  @SerializedName(SERIALIZED_NAME_KEY)
-  private String key;
-
-  public static final String SERIALIZED_NAME_VALUE = "value";
-  @SerializedName(SERIALIZED_NAME_VALUE)
-  private String value;
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
+public class V1alpha1StreamSpecStorage {
+  public static final String SERIALIZED_NAME_CLUSTER_STREAM = "clusterStream";
+  @SerializedName(SERIALIZED_NAME_CLUSTER_STREAM)
+  private String clusterStream;
 
 
-  public V1alpha1ClusterStreamSpecStorageAttributes key(String key) {
+  public V1alpha1StreamSpecStorage clusterStream(String clusterStream) {
     
-    this.key = key;
+    this.clusterStream = clusterStream;
     return this;
   }
 
    /**
-   * Get key
-   * @return key
+   * Get clusterStream
+   * @return clusterStream
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public String getKey() {
-    return key;
+  public String getClusterStream() {
+    return clusterStream;
   }
 
 
-  public void setKey(String key) {
-    this.key = key;
-  }
-
-
-  public V1alpha1ClusterStreamSpecStorageAttributes value(String value) {
-    
-    this.value = value;
-    return this;
-  }
-
-   /**
-   * Get value
-   * @return value
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public String getValue() {
-    return value;
-  }
-
-
-  public void setValue(String value) {
-    this.value = value;
+  public void setClusterStream(String clusterStream) {
+    this.clusterStream = clusterStream;
   }
 
 
@@ -92,23 +65,21 @@ public class V1alpha1ClusterStreamSpecStorageAttributes {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpecStorageAttributes v1alpha1ClusterStreamSpecStorageAttributes = (V1alpha1ClusterStreamSpecStorageAttributes) o;
-    return Objects.equals(this.key, v1alpha1ClusterStreamSpecStorageAttributes.key) &&
-        Objects.equals(this.value, v1alpha1ClusterStreamSpecStorageAttributes.value);
+    V1alpha1StreamSpecStorage v1alpha1StreamSpecStorage = (V1alpha1StreamSpecStorage) o;
+    return Objects.equals(this.clusterStream, v1alpha1StreamSpecStorage.clusterStream);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(key, value);
+    return Objects.hash(clusterStream);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpecStorageAttributes {\n");
-    sb.append("    key: ").append(toIndentedString(key)).append("\n");
-    sb.append("    value: ").append(toIndentedString(value)).append("\n");
+    sb.append("class V1alpha1StreamSpecStorage {\n");
+    sb.append("    clusterStream: ").append(toIndentedString(clusterStream)).append("\n");
     sb.append("}");
     return sb.toString();
   }
