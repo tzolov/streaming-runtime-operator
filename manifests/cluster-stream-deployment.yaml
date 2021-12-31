@@ -14,9 +14,9 @@ spec:
       serviceAccountName: streaming-runtime
       containers:
         - name: cluster-stream-operator
-          image: tzolov/streaming-runtime
+          image: tzolov/streaming-runtime:0.0.1-SNAPSHOT
           env:
-            - name: LOGGING_LEVEL_COM_EXAMPLE_OPERATOR
+            - name: LOGGING_COM_VMWARE_TANZU_STREAMING_RUNTIME
               value: debug
 #            - name: ADOPTION_CENTER_IMAGE
 #              value: springcloudservices/adoption-center:latest

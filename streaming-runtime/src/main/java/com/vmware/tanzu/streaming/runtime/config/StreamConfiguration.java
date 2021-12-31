@@ -1,8 +1,8 @@
 package com.vmware.tanzu.streaming.runtime.config;
 
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamList;
-import com.vmware.tanzu.streaming.runtime.ClusterStreamReconciler;
+import com.vmware.tanzu.streaming.models.V1alpha1Stream;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamList;
+import com.vmware.tanzu.streaming.runtime.StreamReconciler;
 import io.kubernetes.client.extended.controller.Controller;
 import io.kubernetes.client.extended.controller.DefaultControllerWatch;
 import io.kubernetes.client.extended.controller.builder.ControllerBuilder;
@@ -20,57 +20,57 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
-public class ClusterStreamConfiguration {
+public class StreamConfiguration {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ClusterStreamConfiguration.class);
+	private static final Logger LOG = LoggerFactory.getLogger(StreamConfiguration.class);
 
-	private static final String CLUSTER_STREAM_CONTROLLER_NAME = "ClusterStreamController";
+	private static final String STREAM_CONTROLLER_NAME = "StreamController";
 	private static final int WORKER_COUNT = 4;
 
 	@Bean
-	public SharedIndexInformer<V1alpha1ClusterStream> clusterStreamsInformer(
+	public SharedIndexInformer<V1alpha1Stream> streamsInformer(
 			ApiClient apiClient, SharedInformerFactory sharedInformerFactory) {
-		GenericKubernetesApi<V1alpha1ClusterStream, V1alpha1ClusterStreamList> genericApi =
+		GenericKubernetesApi<V1alpha1Stream, V1alpha1StreamList> genericApi =
 				new GenericKubernetesApi<>(
-						V1alpha1ClusterStream.class,
-						V1alpha1ClusterStreamList.class,
+						V1alpha1Stream.class,
+						V1alpha1StreamList.class,
 						"streaming.tanzu.vmware.com",
 						"v1alpha1",
-						"clusterstreams",
+						"streams",
 						apiClient);
-		return sharedInformerFactory.sharedIndexInformerFor(genericApi, V1alpha1ClusterStream.class, 0);
+		return sharedInformerFactory.sharedIndexInformerFor(genericApi, V1alpha1Stream.class, 0);
 	}
 
 	@Bean
-	@Qualifier("clusterStreamController")
-	Controller clusterStreamController(SharedInformerFactory factory, ClusterStreamReconciler clusterStreamReconciler,
-			SharedIndexInformer<V1alpha1ClusterStream> clusterStreamInformer) {
+	@Qualifier("streamController")
+	Controller streamController(SharedInformerFactory factory, StreamReconciler streamReconciler,
+			SharedIndexInformer<V1alpha1Stream> streamInformer) {
 		return ControllerBuilder.defaultBuilder(factory)
-				.watch(this::createClusterStreamControllerWatch)
-				.withReconciler(clusterStreamReconciler)
-				.withName(CLUSTER_STREAM_CONTROLLER_NAME)
+				.watch(this::createStreamControllerWatch)
+				.withReconciler(streamReconciler)
+				.withName(STREAM_CONTROLLER_NAME)
 				.withWorkerCount(WORKER_COUNT)
-				.withReadyFunc(clusterStreamInformer::hasSynced)
+				.withReadyFunc(streamInformer::hasSynced)
 				.build();
 	}
 
-	private DefaultControllerWatch<V1alpha1ClusterStream> createClusterStreamControllerWatch(WorkQueue<Request> workQueue) {
-		return ControllerBuilder.controllerWatchBuilder(V1alpha1ClusterStream.class, workQueue)
-				.withOnAddFilter(clusterStream -> {
-					LOG.info(String.format("[%s] Event: Add ClusterStream '%s'",
-							CLUSTER_STREAM_CONTROLLER_NAME, clusterStream.getMetadata().getName()));
+	private DefaultControllerWatch<V1alpha1Stream> createStreamControllerWatch(WorkQueue<Request> workQueue) {
+		return ControllerBuilder.controllerWatchBuilder(V1alpha1Stream.class, workQueue)
+				.withOnAddFilter(stream -> {
+					LOG.info(String.format("[%s] Event: Add Stream '%s'",
+							STREAM_CONTROLLER_NAME, stream.getMetadata().getName()));
 					return true;
 				})
-				.withOnUpdateFilter((oldClusterStream, newClusterStream) -> {
+				.withOnUpdateFilter((oldStream, newStream) -> {
 					LOG.info(String.format(
-							"[%s] Event: Update ClusterStream '%s' to %s'",
-							CLUSTER_STREAM_CONTROLLER_NAME, oldClusterStream.getMetadata().getName(),
-							newClusterStream.getMetadata().getName()));
+							"[%s] Event: Update Stream '%s' to %s'",
+							STREAM_CONTROLLER_NAME, oldStream.getMetadata().getName(),
+							newStream.getMetadata().getName()));
 					return true;
 				})
-				.withOnDeleteFilter((deletedClusterStream, deletedFinalStateUnknown) -> {
-					LOG.info(String.format("[%s] Event: Delete ClusterStream '%s'",
-							CLUSTER_STREAM_CONTROLLER_NAME, deletedClusterStream.getMetadata().getName()));
+				.withOnDeleteFilter((deletedStream, deletedFinalStateUnknown) -> {
+					LOG.info(String.format("[%s] Event: Delete Stream '%s'",
+							STREAM_CONTROLLER_NAME, deletedStream.getMetadata().getName()));
 					return false;
 				})
 				.build();

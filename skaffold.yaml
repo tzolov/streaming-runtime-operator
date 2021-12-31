@@ -2,29 +2,24 @@ apiVersion: skaffold/v2beta21
 kind: Config
 
 build:
+  tagPolicy:
+    customTemplate:
+      template: "0.0.1-SNAPSHOT"
   artifacts:
+#    - image: tzolov/streaming-runtime
+#      buildpacks:
+#        builder: paketobuildpacks/builder:tiny
+#        env:
+#          - BP_NATIVE_IMAGE=true
     - image: tzolov/streaming-runtime
       custom:
         buildCommand: |
-          ./gradlew :with-kubernetes-java-client:bootBuildImage \
-          --imageName="$IMAGE" --builder="gcr.io/paketo-buildpacks/builder:base"
-        dependencies:
-          paths:
-            - with-kubernetes-java-client/src/main/**
-            - with-kubernetes-java-client/build.gradle.kts
-            - build.gradle.kts
-#    - image: springcloudservices/adoption-center
-#      context: adoption-center
-#      buildpacks:
-#        builder: gcr.io/paketo-buildpacks/builder:base
-#        dependencies:
-#          paths:
-#            - src/main/**
-#            - build.gradle.kts
+          ./mvnw clean install -Pnative -DskipTests spring-boot:build-image
 deploy:
   kubectl:
     manifests:
       - ./streaming-runtime-crds/cluster-stream-crd.yaml
+      - ./streaming-runtime-crds/stream-crd.yaml
     flags:
       apply:
         - --force

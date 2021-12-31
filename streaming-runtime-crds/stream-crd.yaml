@@ -83,3 +83,5 @@ spec:
     plural: streams
     singular: stream
     kind: Stream
+    shortNames:
+      - srs

@@ -7,22 +7,47 @@ rules:
       - streaming.tanzu.vmware.com
     resources:
       - clusterstreams
+      - streams
     verbs:
       - get
       - list
       - watch
       - patch
-
   - apiGroups:
       - streaming.tanzu.vmware.com
     resources:
       - clusterstream/status
+      - clusterstreams/status
+      - stream/status
     verbs:
       - patch
-
+      - get
+      - list
+      - watch
   - apiGroups:
       - "events.k8s.io"
     resources:
       - events
     verbs:
       - create
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - create
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+      - watch

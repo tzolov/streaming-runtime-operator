@@ -18,6 +18,8 @@ rules:
       - "" # "" indicates the core API group
     resources:
       - configmaps
+      - services
+      - pods
     verbs:
       - list
       - create

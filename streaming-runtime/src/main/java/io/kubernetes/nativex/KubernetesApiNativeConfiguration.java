@@ -54,22 +54,10 @@ import static org.springframework.nativex.hint.TypeAccess.values;
 								"io.kubernetes.client.util.Watch$Response", }) //
 		}//
 )
-//@Slf4j
 public class KubernetesApiNativeConfiguration implements NativeConfiguration {
 
 	@Override
 	public void computeHints(NativeConfigurationRegistry registry, AotOptions aotOptions) {
-		//
-		//List<Class<?>> crdModels = Arrays.asList(
-		//		V1alpha1ClusterStream.class,
-		//		V1alpha1ClusterStreamList.class,
-		//		V1alpha1ClusterStreamSpec.class,
-		//		V1alpha1ClusterStreamSpecStorage.class,
-		//		V1alpha1ClusterStreamSpecStorageAttributes.class,
-		//		V1alpha1ClusterStreamSpecStorageServers.class,
-		//		V1alpha1ClusterStreamStatus.class,
-		//		V1alpha1ClusterStreamStatusConditions.class);
-
 
 		Reflections reflections = new Reflections("io.kubernetes");
 		Set<Class<?>> apiModels = reflections.getTypesAnnotatedWith(ApiModel.class);
@@ -87,7 +75,6 @@ public class KubernetesApiNativeConfiguration implements NativeConfiguration {
 		all.forEach(clzz -> registry.reflection().forType(clzz).withAccess(values()).build());
 	}
 
-	//@SneakyThrows
 	private <R extends Annotation> Set<Class<?>> findJsonAdapters(Reflections reflections) {
 		var jsonAdapterClass = JsonAdapter.class;
 		return reflections.getTypesAnnotatedWith(jsonAdapterClass).stream().flatMap(clazz -> {
@@ -97,9 +84,6 @@ public class KubernetesApiNativeConfiguration implements NativeConfiguration {
 				list.add(annotation.value());
 			}
 			list.add(clazz);
-
-			// debug output
-			//list.forEach(c -> log.info("found @JsonAdapter type: " + c.getName()));
 
 			return list.stream();
 		}).collect(Collectors.toSet());

@@ -95,6 +95,7 @@
 						<env>
 							<BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
 						</env>
+						<name>tzolov/${project.artifactId}:${project.version}</name>
 					</image>
 				</configuration>
 			</plugin>

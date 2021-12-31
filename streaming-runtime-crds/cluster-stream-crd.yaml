@@ -96,3 +96,5 @@ spec:
     plural: clusterstreams
     singular: clusterstream
     kind: ClusterStream
+    shortNames:
+      - srcs

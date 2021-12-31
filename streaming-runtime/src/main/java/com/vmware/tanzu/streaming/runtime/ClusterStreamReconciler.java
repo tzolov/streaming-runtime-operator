@@ -113,9 +113,8 @@ public class ClusterStreamReconciler implements Reconciler {
 	}
 
 	private void logFailureEvent(V1alpha1ClusterStream clusterStream, String reason, Exception e) {
-		e.printStackTrace();
 		String message = String.format("Failed to deploy Cluster Stream %s: %s", clusterStream.getMetadata().getName(), reason);
-		LOG.error(message);
+		LOG.error(message, e);
 		//eventRecorder.logEvent(
 		//		toOwnerReference(clusterStream).namespace(adoptionCenterNamespace),
 		//		null,

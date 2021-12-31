@@ -9,3 +9,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: streaming-runtime
+    namespace: streaming-runtime
+#    namespace: default

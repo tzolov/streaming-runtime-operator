@@ -42,7 +42,7 @@ public class ClusterStreamConfiguration {
 	}
 
 	@Bean
-	@Qualifier("clusterStreamController")
+	@Qualifier("streamController")
 	Controller clusterStreamController(SharedInformerFactory factory, ClusterStreamReconciler clusterStreamReconciler,
 			SharedIndexInformer<V1alpha1ClusterStream> clusterStreamInformer) {
 		return ControllerBuilder.defaultBuilder(factory)
