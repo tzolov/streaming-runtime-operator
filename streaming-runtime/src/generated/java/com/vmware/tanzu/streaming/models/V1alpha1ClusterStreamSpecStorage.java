@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * V1alpha1ClusterStreamSpecStorage
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
 public class V1alpha1ClusterStreamSpecStorage {
   public static final String SERIALIZED_NAME_ATTRIBUTES = "attributes";
   @SerializedName(SERIALIZED_NAME_ATTRIBUTES)

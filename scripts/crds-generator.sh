@@ -80,7 +80,13 @@ kubectl get crd -o name \
 
 # destroy the KinD cluster
 kind delete cluster --name crd-gen
-kubectl config use-context "$CURRENT_KUBECTL_CONTEXT"
+if [ -z "$CURRENT_KUBECTL_CONTEXT" ]
+then
+  echo "No previous Kubernetes context found!"
+else
+  kubectl config use-context "$CURRENT_KUBECTL_CONTEXT"
+fi
+
 
 rm -Rf $CLIENT_GEN_DIR
 git clone https://github.com/kubernetes-client/gen ${CLIENT_GEN_DIR}|| true

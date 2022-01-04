@@ -8,6 +8,7 @@ rules:
     resources:
       - clusterstreams
       - streams
+      - processors
     verbs:
       - get
       - list
@@ -16,9 +17,10 @@ rules:
   - apiGroups:
       - streaming.tanzu.vmware.com
     resources:
-      - clusterstream/status
+#      - clusterstream/status
       - clusterstreams/status
-      - stream/status
+#      - stream/status
+      - streams/status
     verbs:
       - patch
       - get

@@ -9,10 +9,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
+import com.vmware.tanzu.streaming.runtime.EventRecorder;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.EventsV1Api;
 import io.kubernetes.client.util.ClientBuilder;
 import okhttp3.Protocol;
 
@@ -49,6 +51,11 @@ public class ApiConfig {
 	@Bean
 	AppsV1Api appsV1Api(ApiClient client) {
 		return new AppsV1Api(client);
+	}
+
+	@Bean
+	EventRecorder eventClient(ApiClient client) {
+		return new EventRecorder(new EventsV1Api(client));
 	}
 
 	@Bean

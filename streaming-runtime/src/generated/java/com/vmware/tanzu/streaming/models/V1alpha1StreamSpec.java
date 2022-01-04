@@ -30,19 +30,23 @@ import java.util.List;
 /**
  * V1alpha1StreamSpec
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2021-12-29T16:31:11.251Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
 public class V1alpha1StreamSpec {
   public static final String SERIALIZED_NAME_KEYS = "keys";
   @SerializedName(SERIALIZED_NAME_KEYS)
   private List<String> keys = null;
 
+  public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
+  @SerializedName(SERIALIZED_NAME_PROTOCOL)
+  private String protocol;
+
   public static final String SERIALIZED_NAME_STORAGE = "storage";
   @SerializedName(SERIALIZED_NAME_STORAGE)
   private V1alpha1StreamSpecStorage storage;
 
-  public static final String SERIALIZED_NAME_STREAM_MODES = "streamModes";
-  @SerializedName(SERIALIZED_NAME_STREAM_MODES)
-  private List<String> streamModes = null;
+  public static final String SERIALIZED_NAME_STREAM_MODE = "streamMode";
+  @SerializedName(SERIALIZED_NAME_STREAM_MODE)
+  private List<String> streamMode = null;
 
 
   public V1alpha1StreamSpec keys(List<String> keys) {
@@ -76,6 +80,29 @@ public class V1alpha1StreamSpec {
   }
 
 
+  public V1alpha1StreamSpec protocol(String protocol) {
+    
+    this.protocol = protocol;
+    return this;
+  }
+
+   /**
+   * Get protocol
+   * @return protocol
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public String getProtocol() {
+    return protocol;
+  }
+
+
+  public void setProtocol(String protocol) {
+    this.protocol = protocol;
+  }
+
+
   public V1alpha1StreamSpec storage(V1alpha1StreamSpecStorage storage) {
     
     this.storage = storage;
@@ -99,34 +126,34 @@ public class V1alpha1StreamSpec {
   }
 
 
-  public V1alpha1StreamSpec streamModes(List<String> streamModes) {
+  public V1alpha1StreamSpec streamMode(List<String> streamMode) {
     
-    this.streamModes = streamModes;
+    this.streamMode = streamMode;
     return this;
   }
 
-  public V1alpha1StreamSpec addStreamModesItem(String streamModesItem) {
-    if (this.streamModes == null) {
-      this.streamModes = new ArrayList<>();
+  public V1alpha1StreamSpec addStreamModeItem(String streamModeItem) {
+    if (this.streamMode == null) {
+      this.streamMode = new ArrayList<>();
     }
-    this.streamModes.add(streamModesItem);
+    this.streamMode.add(streamModeItem);
     return this;
   }
 
    /**
-   * Get streamModes
-   * @return streamModes
+   * Get streamMode
+   * @return streamMode
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public List<String> getStreamModes() {
-    return streamModes;
+  public List<String> getStreamMode() {
+    return streamMode;
   }
 
 
-  public void setStreamModes(List<String> streamModes) {
-    this.streamModes = streamModes;
+  public void setStreamMode(List<String> streamMode) {
+    this.streamMode = streamMode;
   }
 
 
@@ -140,13 +167,14 @@ public class V1alpha1StreamSpec {
     }
     V1alpha1StreamSpec v1alpha1StreamSpec = (V1alpha1StreamSpec) o;
     return Objects.equals(this.keys, v1alpha1StreamSpec.keys) &&
+        Objects.equals(this.protocol, v1alpha1StreamSpec.protocol) &&
         Objects.equals(this.storage, v1alpha1StreamSpec.storage) &&
-        Objects.equals(this.streamModes, v1alpha1StreamSpec.streamModes);
+        Objects.equals(this.streamMode, v1alpha1StreamSpec.streamMode);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(keys, storage, streamModes);
+    return Objects.hash(keys, protocol, storage, streamMode);
   }
 
 
@@ -155,8 +183,9 @@ public class V1alpha1StreamSpec {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1StreamSpec {\n");
     sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
     sb.append("    storage: ").append(toIndentedString(storage)).append("\n");
-    sb.append("    streamModes: ").append(toIndentedString(streamModes)).append("\n");
+    sb.append("    streamMode: ").append(toIndentedString(streamMode)).append("\n");
     sb.append("}");
     return sb.toString();
   }

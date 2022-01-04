@@ -9,9 +9,9 @@ public interface ProtocolDeploymentEditor {
 
 	String getProtocolName();
 
-	boolean create(V1OwnerReference ownerReference) throws IOException, ApiException;
+	boolean createMissingServicesAndDeployments(V1OwnerReference ownerReference, String namespace) throws IOException, ApiException;
 
-	boolean isAllRunning(V1OwnerReference ownerReference) throws ApiException;
+	boolean isAllRunning(V1OwnerReference ownerReference, String namespace);
 
-	String storageAddress(V1OwnerReference ownerReference)  throws ApiException;
+	String storageAddress(V1OwnerReference ownerReference, String namespace);
 }

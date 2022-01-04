@@ -20,67 +20,51 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusConditions;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * V1alpha1ClusterStreamSpecStorageServers
+ * V1alpha1ProcessorStatus
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
-public class V1alpha1ClusterStreamSpecStorageServers {
-  public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
-  @SerializedName(SERIALIZED_NAME_PROTOCOL)
-  private String protocol;
-
-  public static final String SERIALIZED_NAME_URL = "url";
-  @SerializedName(SERIALIZED_NAME_URL)
-  private String url;
+public class V1alpha1ProcessorStatus {
+  public static final String SERIALIZED_NAME_CONDITIONS = "conditions";
+  @SerializedName(SERIALIZED_NAME_CONDITIONS)
+  private List<V1alpha1ClusterStreamStatusConditions> conditions = null;
 
 
-  public V1alpha1ClusterStreamSpecStorageServers protocol(String protocol) {
+  public V1alpha1ProcessorStatus conditions(List<V1alpha1ClusterStreamStatusConditions> conditions) {
     
-    this.protocol = protocol;
+    this.conditions = conditions;
+    return this;
+  }
+
+  public V1alpha1ProcessorStatus addConditionsItem(V1alpha1ClusterStreamStatusConditions conditionsItem) {
+    if (this.conditions == null) {
+      this.conditions = new ArrayList<>();
+    }
+    this.conditions.add(conditionsItem);
     return this;
   }
 
    /**
-   * Get protocol
-   * @return protocol
+   * List of status conditions.
+   * @return conditions
   **/
   @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "List of status conditions.")
 
-  public String getProtocol() {
-    return protocol;
+  public List<V1alpha1ClusterStreamStatusConditions> getConditions() {
+    return conditions;
   }
 
 
-  public void setProtocol(String protocol) {
-    this.protocol = protocol;
-  }
-
-
-  public V1alpha1ClusterStreamSpecStorageServers url(String url) {
-    
-    this.url = url;
-    return this;
-  }
-
-   /**
-   * Get url
-   * @return url
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public String getUrl() {
-    return url;
-  }
-
-
-  public void setUrl(String url) {
-    this.url = url;
+  public void setConditions(List<V1alpha1ClusterStreamStatusConditions> conditions) {
+    this.conditions = conditions;
   }
 
 
@@ -92,23 +76,21 @@ public class V1alpha1ClusterStreamSpecStorageServers {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpecStorageServers v1alpha1ClusterStreamSpecStorageServers = (V1alpha1ClusterStreamSpecStorageServers) o;
-    return Objects.equals(this.protocol, v1alpha1ClusterStreamSpecStorageServers.protocol) &&
-        Objects.equals(this.url, v1alpha1ClusterStreamSpecStorageServers.url);
+    V1alpha1ProcessorStatus v1alpha1ProcessorStatus = (V1alpha1ProcessorStatus) o;
+    return Objects.equals(this.conditions, v1alpha1ProcessorStatus.conditions);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(protocol, url);
+    return Objects.hash(conditions);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpecStorageServers {\n");
-    sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
-    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("class V1alpha1ProcessorStatus {\n");
+    sb.append("    conditions: ").append(toIndentedString(conditions)).append("\n");
     sb.append("}");
     return sb.toString();
   }

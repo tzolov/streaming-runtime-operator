@@ -46,38 +46,43 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 	}
 
 	@Override
-	public boolean create(V1OwnerReference ownerReference) throws IOException, ApiException {
+	public boolean createMissingServicesAndDeployments(V1OwnerReference ownerReference, String namespace) throws IOException, ApiException {
 
 		boolean changed = false;
-		if (CollectionUtils.isEmpty(findServices("default", null,"app=kafka"))) {
-			this.createService(ownerReference, zkService, "default");
-			this.createService(ownerReference, kafkaService, "default");
+		if (CollectionUtils.isEmpty(findServices(namespace, null, "app=kafka"))) {
+			this.createService(ownerReference, zkService, namespace);
+			this.createService(ownerReference, kafkaService, namespace);
 			changed = true;
 		}
 
-		if (CollectionUtils.isEmpty(findPods("default", null,"app=kafka-zk,component=kafka-zk"))) {
-			this.createDeployment(ownerReference, zkDeployment, "default", "digitalwonderland/zookeeper");
+		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=kafka-zk,component=kafka-zk"))) {
+			this.createDeployment(ownerReference, zkDeployment, namespace, "digitalwonderland/zookeeper");
 			changed = true;
 		}
 
-		if (CollectionUtils.isEmpty(findPods("default", null,"app=kafka,component=kafka-broker"))) {
-			this.createDeployment(ownerReference, kafkaDeployment, "default", "digitalwonderland/zookeeper");
+		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=kafka,component=kafka-broker"))) {
+			this.createDeployment(ownerReference, kafkaDeployment, namespace, "digitalwonderland/zookeeper");
 			changed = true;
 		}
 		return changed;
 	}
 
 	@Override
-	public boolean isAllRunning(V1OwnerReference ownerReference) throws ApiException {
-		int size = findPods("default", "status.phase=Running", "app in (kafka,kafka-zk)").size();
-		return size == 2;
+	public boolean isAllRunning(V1OwnerReference ownerReference, String namespace)  {
+		try {
+			int size = findPods(namespace, "status.phase=Running", "app in (kafka,kafka-zk)").size();
+			return size == 2;
+		}
+		catch (ApiException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	@Override
-	public String storageAddress(V1OwnerReference ownerReference) throws ApiException {
-		return ""+
-				"\"storageAddress\": { " +
-				"   \"servers\": {" +
+	public String storageAddress(V1OwnerReference ownerReference, String namespace) {
+
+		return "" +
 				"     \"production\": {" +
 				"         \"url\": \"localhost:8080\", " +
 				"         \"protocol\": \"kafka\", " +
@@ -86,9 +91,8 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 				"              \"brokers\": \"kafka:9092\", " +
 				"              \"zkNodes\": \"kafka-zk:2181\" " +
 				"           } " +
-				"       } " +
-				"   } " +
-				"}";
+				"       }";
+
 	}
 
 	private List<V1Pod> findPods(String namesapce, String fieldSelector, String labelSelector) throws ApiException {

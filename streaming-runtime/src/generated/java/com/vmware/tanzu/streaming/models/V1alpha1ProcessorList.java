@@ -20,21 +20,27 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatus;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpec;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import com.vmware.tanzu.streaming.models.V1alpha1Processor;
+import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * V1alpha1Stream
+ * ProcessorList is a list of Processor
  */
+@ApiModel(description = "ProcessorList is a list of Processor")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
-public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObject {
+public class V1alpha1ProcessorList implements io.kubernetes.client.common.KubernetesListObject {
   public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
   @SerializedName(SERIALIZED_NAME_API_VERSION)
   private String apiVersion;
+
+  public static final String SERIALIZED_NAME_ITEMS = "items";
+  @SerializedName(SERIALIZED_NAME_ITEMS)
+  private List<V1alpha1Processor> items = new ArrayList<>();
 
   public static final String SERIALIZED_NAME_KIND = "kind";
   @SerializedName(SERIALIZED_NAME_KIND)
@@ -42,18 +48,10 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
 
   public static final String SERIALIZED_NAME_METADATA = "metadata";
   @SerializedName(SERIALIZED_NAME_METADATA)
-  private V1ObjectMeta metadata = null;
-
-  public static final String SERIALIZED_NAME_SPEC = "spec";
-  @SerializedName(SERIALIZED_NAME_SPEC)
-  private V1alpha1StreamSpec spec;
-
-  public static final String SERIALIZED_NAME_STATUS = "status";
-  @SerializedName(SERIALIZED_NAME_STATUS)
-  private V1alpha1ClusterStreamStatus status;
+  private V1ListMeta metadata = null;
 
 
-  public V1alpha1Stream apiVersion(String apiVersion) {
+  public V1alpha1ProcessorList apiVersion(String apiVersion) {
     
     this.apiVersion = apiVersion;
     return this;
@@ -76,7 +74,34 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   }
 
 
-  public V1alpha1Stream kind(String kind) {
+  public V1alpha1ProcessorList items(List<V1alpha1Processor> items) {
+    
+    this.items = items;
+    return this;
+  }
+
+  public V1alpha1ProcessorList addItemsItem(V1alpha1Processor itemsItem) {
+    this.items.add(itemsItem);
+    return this;
+  }
+
+   /**
+   * List of processors. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md
+   * @return items
+  **/
+  @ApiModelProperty(required = true, value = "List of processors. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md")
+
+  public List<V1alpha1Processor> getItems() {
+    return items;
+  }
+
+
+  public void setItems(List<V1alpha1Processor> items) {
+    this.items = items;
+  }
+
+
+  public V1alpha1ProcessorList kind(String kind) {
     
     this.kind = kind;
     return this;
@@ -99,7 +124,7 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   }
 
 
-  public V1alpha1Stream metadata(V1ObjectMeta metadata) {
+  public V1alpha1ProcessorList metadata(V1ListMeta metadata) {
     
     this.metadata = metadata;
     return this;
@@ -112,59 +137,13 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1ObjectMeta getMetadata() {
+  public V1ListMeta getMetadata() {
     return metadata;
   }
 
 
-  public void setMetadata(V1ObjectMeta metadata) {
+  public void setMetadata(V1ListMeta metadata) {
     this.metadata = metadata;
-  }
-
-
-  public V1alpha1Stream spec(V1alpha1StreamSpec spec) {
-    
-    this.spec = spec;
-    return this;
-  }
-
-   /**
-   * Get spec
-   * @return spec
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public V1alpha1StreamSpec getSpec() {
-    return spec;
-  }
-
-
-  public void setSpec(V1alpha1StreamSpec spec) {
-    this.spec = spec;
-  }
-
-
-  public V1alpha1Stream status(V1alpha1ClusterStreamStatus status) {
-    
-    this.status = status;
-    return this;
-  }
-
-   /**
-   * Get status
-   * @return status
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public V1alpha1ClusterStreamStatus getStatus() {
-    return status;
-  }
-
-
-  public void setStatus(V1alpha1ClusterStreamStatus status) {
-    this.status = status;
   }
 
 
@@ -176,29 +155,27 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1Stream v1alpha1Stream = (V1alpha1Stream) o;
-    return Objects.equals(this.apiVersion, v1alpha1Stream.apiVersion) &&
-        Objects.equals(this.kind, v1alpha1Stream.kind) &&
-        Objects.equals(this.metadata, v1alpha1Stream.metadata) &&
-        Objects.equals(this.spec, v1alpha1Stream.spec) &&
-        Objects.equals(this.status, v1alpha1Stream.status);
+    V1alpha1ProcessorList v1alpha1ProcessorList = (V1alpha1ProcessorList) o;
+    return Objects.equals(this.apiVersion, v1alpha1ProcessorList.apiVersion) &&
+        Objects.equals(this.items, v1alpha1ProcessorList.items) &&
+        Objects.equals(this.kind, v1alpha1ProcessorList.kind) &&
+        Objects.equals(this.metadata, v1alpha1ProcessorList.metadata);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(apiVersion, kind, metadata, spec, status);
+    return Objects.hash(apiVersion, items, kind, metadata);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1Stream {\n");
+    sb.append("class V1alpha1ProcessorList {\n");
     sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
+    sb.append("    items: ").append(toIndentedString(items)).append("\n");
     sb.append("    kind: ").append(toIndentedString(kind)).append("\n");
     sb.append("    metadata: ").append(toIndentedString(metadata)).append("\n");
-    sb.append("    spec: ").append(toIndentedString(spec)).append("\n");
-    sb.append("    status: ").append(toIndentedString(status)).append("\n");
     sb.append("}");
     return sb.toString();
   }

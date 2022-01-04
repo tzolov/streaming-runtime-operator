@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: streams.streaming.tanzu.vmware.com
+  name: processors.streaming.tanzu.vmware.com
 spec:
   group: streaming.tanzu.vmware.com
   versions:
@@ -24,21 +24,23 @@ spec:
             spec:
               type: object
               properties:
-                keys:
-                  type: array
-                  items:
-                    type: string
-                protocol:
-                  type: string
-                streamMode:
-                  type: array
-                  items:
-                    type: string
-                storage:
+                inputs:
                   type: object
                   properties:
-                    clusterStream:
-                      type: string
+                    sources:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                outputs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
             status:
               type: object
               properties:
@@ -60,30 +62,10 @@ spec:
                         type: string
                         description: The reason for the condition's last transition (a single word in CamelCase).
                   description: List of status conditions.
-                storageAddress:
-                  type: object
-                  properties:
-                    servers:
-                      type: object
-                      additionalProperties:
-                        type: object
-                        properties:
-                          url:
-                            type: string
-                          protocol:
-                            type: string
-                          protocolVersion:
-                            type: string
-                          description:
-                            type: string
-                          variables:
-                            type: object
-                            additionalProperties:
-                              type: string
   scope: Namespaced
   names:
-    plural: streams
-    singular: stream
-    kind: Stream
+    plural: processors
+    singular: processor
+    kind: Processor
     shortNames:
-      - srs
+      - srp

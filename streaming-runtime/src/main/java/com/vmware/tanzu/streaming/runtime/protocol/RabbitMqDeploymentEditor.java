@@ -44,30 +44,48 @@ public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor{
 	}
 
 	@Override
-	public boolean create(V1OwnerReference ownerReference) throws IOException, ApiException {
+	public boolean createMissingServicesAndDeployments(V1OwnerReference ownerReference, String namespace) throws IOException, ApiException {
 
 		boolean changed = false;
-		if (CollectionUtils.isEmpty(findServices("default", null,"app=rabbitmq"))) {
-			this.createService(ownerReference, rabbitmqService, "default");
+		if (CollectionUtils.isEmpty(findServices(namespace, null,"app=rabbitmq"))) {
+			this.createService(ownerReference, rabbitmqService, namespace);
 			changed = true;
 		}
 
-		if (CollectionUtils.isEmpty(findPods("default", null,"app=rabbitmq"))) {
-			this.createDeployment(ownerReference, rabbitmqDeployment, "default", "rabbitmq:3-management");
+		if (CollectionUtils.isEmpty(findPods(namespace, null,"app=rabbitmq"))) {
+			this.createDeployment(ownerReference, rabbitmqDeployment, namespace, "rabbitmq:3-management");
 			changed = true;
 		}
 		return changed;
 	}
 
 	@Override
-	public boolean isAllRunning(V1OwnerReference ownerReference) throws ApiException {
-		int size = findPods("default", "status.phase=Running", "app in (rabbitmq)").size();
-		return size == 2;
+	public boolean isAllRunning(V1OwnerReference ownerReference, String namespace) {
+		try {
+			int size = findPods(namespace, "status.phase=Running", "app in (rabbitmq)").size();
+			return size == 1;
+		}
+		catch (ApiException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	@Override
-	public String storageAddress(V1OwnerReference ownerReference) throws ApiException {
-		return "TODO";
+	public String storageAddress(V1OwnerReference ownerReference, String namespace) {
+		return "" +
+				"     \"production\": {" +
+				"         \"url\": \"localhost:8080\", " +
+				"         \"protocol\": \"rabbitmq\", " +
+				"         \"protocolVersion\": \"1.0.0\", " +
+				"         \"variables\": { " +
+				"              \"host\": \"rabbitmq\", " +
+				"              \"port\": \"5672\", " +
+				"              \"username\": \"guest\", " + // TODO: WRONG SECRETS!
+				"              \"password\": \"guest\" " +
+				"           } " +
+				"       }";
+
 	}
 
 	private List<V1Pod> findPods(String namesapce, String fieldSelector, String labelSelector) throws ApiException {

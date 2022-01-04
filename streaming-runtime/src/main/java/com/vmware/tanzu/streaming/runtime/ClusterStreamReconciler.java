@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,11 +14,13 @@ import java.util.stream.Stream;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorageServers;
+import com.vmware.tanzu.streaming.runtime.config.ClusterStreamConfiguration;
 import com.vmware.tanzu.streaming.runtime.protocol.ProtocolDeploymentEditor;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Reconciler;
 import io.kubernetes.client.extended.controller.reconciler.Request;
 import io.kubernetes.client.extended.controller.reconciler.Result;
+import io.kubernetes.client.extended.event.EventType;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiException;
@@ -26,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Component
 public class ClusterStreamReconciler implements Reconciler {
@@ -35,25 +41,31 @@ public class ClusterStreamReconciler implements Reconciler {
 
 	private final Lister<V1alpha1ClusterStream> clusterStreamLister;
 	private final Map<String, ProtocolDeploymentEditor> protocolDeploymentEditors;
+	private final EventRecorder eventRecorder;
+	private final ConfigMapUpdater configMapUpdater;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
 
 	public ClusterStreamReconciler(SharedIndexInformer<V1alpha1ClusterStream> clusterStreamInformer,
-			ProtocolDeploymentEditor[] protocolDeploymentEditors, StreamingTanzuVmwareComV1alpha1Api api) {
+			ProtocolDeploymentEditor[] protocolDeploymentEditors, StreamingTanzuVmwareComV1alpha1Api api,
+			EventRecorder eventRecorder, ConfigMapUpdater configMapUpdater) {
 
 		this.api = api;
 		this.clusterStreamLister = new Lister<>(clusterStreamInformer.getIndexer());
 		this.protocolDeploymentEditors =
 				Stream.of(protocolDeploymentEditors)
 						.collect(Collectors.toMap(ProtocolDeploymentEditor::getProtocolName, Function.identity()));
+		this.eventRecorder = eventRecorder;
+		this.configMapUpdater = configMapUpdater;
 	}
 
 	@Override
 	public Result reconcile(Request request) {
 
 		V1alpha1ClusterStream clusterStream = this.clusterStreamLister.get(request.getName());
+		String namespace = (StringUtils.hasText(request.getNamespace())) ? request.getNamespace() : "default";
 
 		final boolean toAdd = (clusterStream.getMetadata() != null) && (clusterStream.getMetadata().getGeneration() == null
-				|| clusterStream.getMetadata().getGeneration() == 1);
+				|| clusterStream.getMetadata().getGeneration() == 1) && (clusterStream.getStatus() == null);
 
 		final boolean toUpdate = (clusterStream.getMetadata() != null) && (clusterStream.getMetadata().getGeneration() != null
 				&& clusterStream.getMetadata().getGeneration() > 1
@@ -64,40 +76,55 @@ public class ClusterStreamReconciler implements Reconciler {
 			for (V1alpha1ClusterStreamSpecStorageServers server : clusterStream.getSpec().getStorage().getServers()) {
 				ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(server.getProtocol());
 				if (toAdd) {
-					if (protocolDeploymentEditor.create(ownerReference)) {
-						setClusterStreamStatus(clusterStream, "Ready", "false",
-								"create-" + protocolDeploymentEditor.getProtocolName() + "-cluster",
-								protocolDeploymentEditor.storageAddress(ownerReference));
+					if (!configMapUpdater.configMapExists(ownerReference.getName())) {
+						configMapUpdater.createConfigMap(ownerReference);
 					}
-					else {
-						if (protocolDeploymentEditor.isAllRunning(ownerReference)) {
-							if (!clusterStream.getStatus().getConditions().stream().map(c -> c.getStatus()).allMatch(s -> s.equalsIgnoreCase("true"))) {
-								setClusterStreamStatus(clusterStream, "Ready", "true",
-										"running-" + protocolDeploymentEditor.getProtocolName() + "-cluster",
-										protocolDeploymentEditor.storageAddress(ownerReference));
-							}
-						}
-						else {
-							return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
-						}
-					}
+					protocolDeploymentEditor.createMissingServicesAndDeployments(ownerReference, namespace);
 				}
 				else if (toUpdate) {
 					//TODO
 					System.out.println("UPDATE");
 				}
 			}
+
+			//Status Update
+			List<String> serverAddresses = clusterStream.getSpec().getStorage().getServers().stream()
+					.map(server -> this.protocolDeploymentEditors.get(server.getProtocol()))
+					.filter(protocol -> protocol.isAllRunning(ownerReference, namespace))
+					.map(protocol -> protocol.storageAddress(ownerReference, namespace))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
+
+			boolean isStatusReady = !CollectionUtils.isEmpty(serverAddresses);
+			String readyStatus = isStatusReady ? "true" : "false";
+			String reason = isStatusReady ? "ProtocolDeployed" : "ProtocolDeployment";
+			String storageAddress = String.format("\"storageAddress\": { \"servers\": { %s } }", String.join(",", serverAddresses));
+
+			// Avoid status update loops
+			if (clusterStream.getStatus() == null
+					|| clusterStream.getStatus().getConditions() == null
+					|| !clusterStream.getStatus().getConditions().stream().allMatch(
+							condition -> readyStatus.equalsIgnoreCase(condition.getStatus())
+									&& reason.equalsIgnoreCase(condition.getReason()))) {
+				setClusterStreamStatus(clusterStream, "Ready", readyStatus, reason, storageAddress);
+			}
+
+			if (!isStatusReady) {
+				return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+			}
 		}
-		//catch (ApiException e) {
-		//	if (e.getCode() == 409) {
-		//		LOG.info("Required subresource is already present, skip creation.");
-		//		return new Result(false);
-		//	}
-		//	logFailureEvent(clusterStream, e.getCode() + " - " + e.getResponseBody(), e);
-		//	return new Result(true);
-		//}
-		catch (Exception e) {
-			logFailureEvent(clusterStream, e.getMessage(), e);
+		catch (
+				ApiException e) {
+			if (e.getCode() == 409) {
+				LOG.info("Required subresource is already present, skip creation.");
+				return new Result(!REQUEUE);
+			}
+			logFailureEvent(clusterStream, namespace, e.getCode() + " - " + e.getResponseBody(), e);
+			return new Result(REQUEUE);
+		}
+		catch (
+				Exception e) {
+			logFailureEvent(clusterStream, namespace, e.getMessage(), e);
 			return new Result(REQUEUE);
 		}
 		return new Result(!REQUEUE);
@@ -112,15 +139,16 @@ public class ClusterStreamReconciler implements Reconciler {
 				.blockOwnerDeletion(true);
 	}
 
-	private void logFailureEvent(V1alpha1ClusterStream clusterStream, String reason, Exception e) {
+	private void logFailureEvent(V1alpha1ClusterStream clusterStream, String namespace, String reason, Exception e) {
 		String message = String.format("Failed to deploy Cluster Stream %s: %s", clusterStream.getMetadata().getName(), reason);
 		LOG.error(message, e);
-		//eventRecorder.logEvent(
-		//		toOwnerReference(clusterStream).namespace(adoptionCenterNamespace),
-		//		null,
-		//		e.getClass().getName(),
-		//		message + ": " + e.getMessage(),
-		//		EventType.Warning);
+		eventRecorder.logEvent(
+				EventRecorder.toObjectReference(clusterStream).namespace(namespace),
+				null,
+				ClusterStreamConfiguration.CLUSTER_STREAM_CONTROLLER_NAME,
+				e.getClass().getName(),
+				message + ": " + e.getMessage(),
+				EventType.Warning);
 	}
 
 	public void setClusterStreamStatus(V1alpha1ClusterStream clusterStream, String type, String status, String reason,
@@ -130,7 +158,7 @@ public class ClusterStreamReconciler implements Reconciler {
 						"{\"status\": " +
 						"  {\"conditions\": " +
 						"      [{ \"type\": \"%s\", \"status\": \"%s\", \"lastTransitionTime\": \"%s\", \"reason\": \"%s\"}]," +
-				        "     %s" +
+						"     %s" +
 						"  }" +
 						"}",
 				type, status, ZonedDateTime.now(ZoneOffset.UTC), reason, storageAddress);

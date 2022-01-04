@@ -20,18 +20,18 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatus;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpec;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpec;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1Stream
+ * V1alpha1Processor
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
-public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObject {
+public class V1alpha1Processor implements io.kubernetes.client.common.KubernetesObject {
   public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
   @SerializedName(SERIALIZED_NAME_API_VERSION)
   private String apiVersion;
@@ -46,14 +46,14 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
 
   public static final String SERIALIZED_NAME_SPEC = "spec";
   @SerializedName(SERIALIZED_NAME_SPEC)
-  private V1alpha1StreamSpec spec;
+  private V1alpha1ProcessorSpec spec;
 
   public static final String SERIALIZED_NAME_STATUS = "status";
   @SerializedName(SERIALIZED_NAME_STATUS)
-  private V1alpha1ClusterStreamStatus status;
+  private V1alpha1ProcessorStatus status;
 
 
-  public V1alpha1Stream apiVersion(String apiVersion) {
+  public V1alpha1Processor apiVersion(String apiVersion) {
     
     this.apiVersion = apiVersion;
     return this;
@@ -76,7 +76,7 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   }
 
 
-  public V1alpha1Stream kind(String kind) {
+  public V1alpha1Processor kind(String kind) {
     
     this.kind = kind;
     return this;
@@ -99,7 +99,7 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   }
 
 
-  public V1alpha1Stream metadata(V1ObjectMeta metadata) {
+  public V1alpha1Processor metadata(V1ObjectMeta metadata) {
     
     this.metadata = metadata;
     return this;
@@ -122,7 +122,7 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   }
 
 
-  public V1alpha1Stream spec(V1alpha1StreamSpec spec) {
+  public V1alpha1Processor spec(V1alpha1ProcessorSpec spec) {
     
     this.spec = spec;
     return this;
@@ -135,17 +135,17 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1alpha1StreamSpec getSpec() {
+  public V1alpha1ProcessorSpec getSpec() {
     return spec;
   }
 
 
-  public void setSpec(V1alpha1StreamSpec spec) {
+  public void setSpec(V1alpha1ProcessorSpec spec) {
     this.spec = spec;
   }
 
 
-  public V1alpha1Stream status(V1alpha1ClusterStreamStatus status) {
+  public V1alpha1Processor status(V1alpha1ProcessorStatus status) {
     
     this.status = status;
     return this;
@@ -158,12 +158,12 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1alpha1ClusterStreamStatus getStatus() {
+  public V1alpha1ProcessorStatus getStatus() {
     return status;
   }
 
 
-  public void setStatus(V1alpha1ClusterStreamStatus status) {
+  public void setStatus(V1alpha1ProcessorStatus status) {
     this.status = status;
   }
 
@@ -176,12 +176,12 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1Stream v1alpha1Stream = (V1alpha1Stream) o;
-    return Objects.equals(this.apiVersion, v1alpha1Stream.apiVersion) &&
-        Objects.equals(this.kind, v1alpha1Stream.kind) &&
-        Objects.equals(this.metadata, v1alpha1Stream.metadata) &&
-        Objects.equals(this.spec, v1alpha1Stream.spec) &&
-        Objects.equals(this.status, v1alpha1Stream.status);
+    V1alpha1Processor v1alpha1Processor = (V1alpha1Processor) o;
+    return Objects.equals(this.apiVersion, v1alpha1Processor.apiVersion) &&
+        Objects.equals(this.kind, v1alpha1Processor.kind) &&
+        Objects.equals(this.metadata, v1alpha1Processor.metadata) &&
+        Objects.equals(this.spec, v1alpha1Processor.spec) &&
+        Objects.equals(this.status, v1alpha1Processor.status);
   }
 
   @Override
@@ -193,7 +193,7 @@ public class V1alpha1Stream implements io.kubernetes.client.common.KubernetesObj
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1Stream {\n");
+    sb.append("class V1alpha1Processor {\n");
     sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
     sb.append("    kind: ").append(toIndentedString(kind)).append("\n");
     sb.append("    metadata: ").append(toIndentedString(metadata)).append("\n");

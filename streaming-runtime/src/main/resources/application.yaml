@@ -1,0 +1,4 @@
+streaming-runtime:
+  namespace: streaming-runtime
+  configMapKey: application-streams.yaml
+#  image: springcloudservices/adoption-center:latest

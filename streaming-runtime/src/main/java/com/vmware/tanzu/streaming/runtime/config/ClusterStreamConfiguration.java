@@ -10,12 +10,16 @@ import io.kubernetes.client.extended.controller.reconciler.Request;
 import io.kubernetes.client.extended.workqueue.WorkQueue;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
+import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,7 +28,7 @@ public class ClusterStreamConfiguration {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ClusterStreamConfiguration.class);
 
-	private static final String CLUSTER_STREAM_CONTROLLER_NAME = "ClusterStreamController";
+	public static final String CLUSTER_STREAM_CONTROLLER_NAME = "ClusterStreamController";
 	private static final int WORKER_COUNT = 4;
 
 	@Bean
@@ -42,7 +46,7 @@ public class ClusterStreamConfiguration {
 	}
 
 	@Bean
-	@Qualifier("streamController")
+	@Qualifier("clusterStreamController")
 	Controller clusterStreamController(SharedInformerFactory factory, ClusterStreamReconciler clusterStreamReconciler,
 			SharedIndexInformer<V1alpha1ClusterStream> clusterStreamInformer) {
 		return ControllerBuilder.defaultBuilder(factory)
@@ -74,5 +78,16 @@ public class ClusterStreamConfiguration {
 					return false;
 				})
 				.build();
+	}
+
+	@Bean
+	public Lister<V1ConfigMap> configMapLister(
+			@Value("${streaming-runtime.namespace}") String adoptionCenterNamespace,
+			ApiClient apiClient,
+			SharedInformerFactory sharedInformerFactory) {
+		GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> genericApi =
+				new GenericKubernetesApi<>(V1ConfigMap.class, V1ConfigMapList.class, "", "v1", "configmaps", apiClient);
+		SharedIndexInformer<V1ConfigMap> informer = sharedInformerFactory.sharedIndexInformerFor(genericApi, V1ConfigMap.class, 60 * 1000L, adoptionCenterNamespace);
+		return new Lister<>(informer.getIndexer());
 	}
 }

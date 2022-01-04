@@ -1,5 +1,7 @@
 package com.vmware.tanzu.streaming.runtime.config;
 
+import java.util.Objects;
+
 import com.vmware.tanzu.streaming.models.V1alpha1Stream;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamList;
 import com.vmware.tanzu.streaming.runtime.StreamReconciler;
@@ -24,7 +26,7 @@ public class StreamConfiguration {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StreamConfiguration.class);
 
-	private static final String STREAM_CONTROLLER_NAME = "StreamController";
+	public static final String STREAM_CONTROLLER_NAME = "StreamController";
 	private static final int WORKER_COUNT = 4;
 
 	@Bean
@@ -62,11 +64,18 @@ public class StreamConfiguration {
 					return true;
 				})
 				.withOnUpdateFilter((oldStream, newStream) -> {
-					LOG.info(String.format(
-							"[%s] Event: Update Stream '%s' to %s'",
-							STREAM_CONTROLLER_NAME, oldStream.getMetadata().getName(),
-							newStream.getMetadata().getName()));
-					return true;
+					boolean generationChanged = Objects.equals(oldStream.getMetadata().getGeneration(), newStream.getMetadata().getGeneration());
+					if (generationChanged) {
+						LOG.info(String.format(
+								"[%s] Event: Update Stream '%s' to '%s'",
+								STREAM_CONTROLLER_NAME, oldStream.getMetadata().getName(),
+								newStream.getMetadata().getName()));
+					} else {
+						LOG.info(String.format(
+								"[%s] Event: UNCHANGED Update for Stream '%s'",
+								STREAM_CONTROLLER_NAME, newStream.getMetadata().getName()));
+					}
+					return !generationChanged;
 				})
 				.withOnDeleteFilter((deletedStream, deletedFinalStateUnknown) -> {
 					LOG.info(String.format("[%s] Event: Delete Stream '%s'",
