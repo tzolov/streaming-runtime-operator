@@ -1,7 +1,5 @@
 package com.vmware.tanzu.streaming.runtime.config;
 
-import java.util.Objects;
-
 import com.vmware.tanzu.streaming.models.V1alpha1Processor;
 import com.vmware.tanzu.streaming.models.V1alpha1ProcessorList;
 import com.vmware.tanzu.streaming.runtime.ProcessorReconciler;
@@ -46,13 +44,13 @@ public class ProcessorConfiguration {
 	@Bean
 	@Qualifier("processorController")
 	Controller processorController(SharedInformerFactory factory, ProcessorReconciler processorReconciler,
-			SharedIndexInformer<V1alpha1Processor> processorInformer) {
+			SharedIndexInformer<V1alpha1Processor> processorsInformer) {
 		return ControllerBuilder.defaultBuilder(factory)
 				.watch(this::createProcessorControllerWatch)
 				.withReconciler(processorReconciler)
 				.withName(PROCESSOR_CONTROLLER_NAME)
 				.withWorkerCount(WORKER_COUNT)
-				.withReadyFunc(processorInformer::hasSynced)
+				.withReadyFunc(processorsInformer::hasSynced)
 				.build();
 	}
 
@@ -64,18 +62,11 @@ public class ProcessorConfiguration {
 					return true;
 				})
 				.withOnUpdateFilter((oldStream, newStream) -> {
-					boolean generationChanged = Objects.equals(oldStream.getMetadata().getGeneration(), newStream.getMetadata().getGeneration());
-					if (generationChanged) {
-						LOG.info(String.format(
-								"[%s] Event: Update Processor '%s' to '%s'",
-								PROCESSOR_CONTROLLER_NAME, oldStream.getMetadata().getName(),
-								newStream.getMetadata().getName()));
-					} else {
-						LOG.info(String.format(
-								"[%s] Event: UNCHANGED Update for Processor '%s'",
-								PROCESSOR_CONTROLLER_NAME, newStream.getMetadata().getName()));
-					}
-					return !generationChanged;
+					LOG.info(String.format(
+							"[%s] Event: Update Processor '%s' to '%s'",
+							PROCESSOR_CONTROLLER_NAME, oldStream.getMetadata().getName(),
+							newStream.getMetadata().getName()));
+					return true;
 				})
 				.withOnDeleteFilter((deletedStream, deletedFinalStateUnknown) -> {
 					LOG.info(String.format("[%s] Event: Delete Processor '%s'",

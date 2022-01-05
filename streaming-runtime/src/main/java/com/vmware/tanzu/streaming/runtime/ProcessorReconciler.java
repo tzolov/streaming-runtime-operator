@@ -1,21 +1,26 @@
 package com.vmware.tanzu.streaming.runtime;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamList;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorageServers;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusStorageAddressServers;
 import com.vmware.tanzu.streaming.models.V1alpha1Processor;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecInputsSources;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecTemplateSpecContainers;
 import com.vmware.tanzu.streaming.models.V1alpha1Stream;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamList;
-import com.vmware.tanzu.streaming.runtime.config.ClusterStreamConfiguration;
-import com.vmware.tanzu.streaming.runtime.protocol.ProtocolDeploymentEditor;
+import com.vmware.tanzu.streaming.runtime.config.ProcessorConfiguration;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Reconciler;
 import io.kubernetes.client.extended.controller.reconciler.Request;
@@ -24,110 +29,268 @@ import io.kubernetes.client.extended.event.EventType;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerBuilder;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.util.PatchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 @Component
 public class ProcessorReconciler implements Reconciler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessorReconciler.class);
+
+	private static final Resource MULTIBINDER_GRPC_DEPLOYMENT_RESOURCE =
+			toResource("classpath:manifests/multibinder-grpc/multibinder-grpc-deployment.yaml");
+
 	private static final boolean REQUEUE = true;
 
 	private final Lister<V1alpha1Processor> processorLister;
+	private final CoreV1Api coreV1Api;
 	private final EventRecorder eventRecorder;
-	private final ConfigMapUpdater configMapUpdater;
-	private final String streamingRuntimeNameSpace;
+	private final AppsV1Api appsV1Api;
+	private final ObjectMapper yamlMapper;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
 
 	public ProcessorReconciler(SharedIndexInformer<V1alpha1Processor> processorInformer,
-			@Value("${streaming-runtime.namespace}") String streamingRuntimeNameSpace,
-			StreamingTanzuVmwareComV1alpha1Api api, EventRecorder eventRecorder, ConfigMapUpdater configMapUpdater) {
-		this.streamingRuntimeNameSpace = streamingRuntimeNameSpace;
+			StreamingTanzuVmwareComV1alpha1Api api,
+			CoreV1Api coreV1Api,
+			EventRecorder eventRecorder,
+			AppsV1Api appsV1Api,
+			ObjectMapper yamlMapper) {
 
 		this.api = api;
 		this.processorLister = new Lister<>(processorInformer.getIndexer());
+		this.coreV1Api = coreV1Api;
 		this.eventRecorder = eventRecorder;
-		this.configMapUpdater = configMapUpdater;
+		this.appsV1Api = appsV1Api;
+		this.yamlMapper = yamlMapper;
 	}
 
 	@Override
 	public Result reconcile(Request request) {
 
-		V1alpha1Processor processor = this.processorLister.get(request.getName());
-		String namespace = (StringUtils.hasText(request.getNamespace())) ? request.getNamespace() : "default";
+		String processorName = request.getName();
+		String processorNamespace = request.getNamespace();
 
-		final boolean toAdd = (processor.getMetadata() != null) && (processor.getMetadata().getGeneration() == null
-				|| processor.getMetadata().getGeneration() == 1) && (processor.getStatus() == null);
+		V1alpha1Processor processor = this.processorLister.namespace(processorNamespace).get(processorName);
 
-		final boolean toUpdate = (processor.getMetadata() != null) && (processor.getMetadata().getGeneration() != null
-				&& processor.getMetadata().getGeneration() > 1
-				&& processor.getMetadata().getDeletionTimestamp() == null);
+		if (processor == null) {
+			LOG.error(String.format("Missing Processor: %s/%s", processorNamespace, processorName));
+			return new Result(!REQUEUE);
+		}
 
 		try {
-			V1OwnerReference ownerReference = toOwnerReference(processor);
-			Set<String> inputNames = processor.getSpec().getInputs().getSources().stream().map(s ->
-					s.getName()).collect(Collectors.toSet());
-			Set<String> outputNames = processor.getSpec().getOutputs().stream().map(s ->
-					s.getName()).collect(Collectors.toSet());
-			//for (V1alpha1ClusterStreamSpecStorageServers server : processor.getSpec().getStorage().getServers()) {
-			//	ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(server.getProtocol());
-			//	if (toAdd) {
-			//		if (!configMapUpdater.configMapExists(ownerReference.getName())) {
-			//			configMapUpdater.createConfigMap(ownerReference);
-			//		}
-			//		if (protocolDeploymentEditor.createMissingServicesAndDeployments(ownerReference, namespace)) {
-			//			setClusterStreamStatus(processor, "Ready", "false",
-			//					"create-" + protocolDeploymentEditor.getProtocolName() + "-cluster",
-			//					protocolDeploymentEditor.storageAddress(ownerReference, namespace));
-			//		}
-			//		else {
-			//			if (protocolDeploymentEditor.isAllRunning(ownerReference, namespace)) {
-			//				if (!processor.getStatus().getConditions().stream().map(c -> c.getStatus()).allMatch(s -> s.equalsIgnoreCase("true"))) {
-			//					setClusterStreamStatus(processor, "Ready", "true",
-			//							"running-" + protocolDeploymentEditor.getProtocolName() + "-cluster",
-			//							protocolDeploymentEditor.storageAddress(ownerReference, namespace));
-			//				}
-			//			}
-			//			else {
-			//				return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
-			//			}
-			//		}
-			//	}
-			//	else if (toUpdate) {
-			//		//TODO
-			//		System.out.println("UPDATE");
-			//	}
-			//}
-		//}
-		//catch (ApiException e) {
-		//	if (e.getCode() == 409) {
-		//		LOG.info("Required subresource is already present, skip creation.");
-		//		return new Result(!REQUEUE);
-		//	}
-		//	logFailureEvent(processor, namespace, e.getCode() + " - " + e.getResponseBody(), e);
-		//	return new Result(REQUEUE);
+			final boolean toDelete = processor.getMetadata().getDeletionTimestamp() != null;
+
+			if (!toDelete) {
+				List<V1alpha1Stream> inputStreams = getStreams(processor, processor.getSpec().getInputs().getSources());
+				List<V1alpha1Stream> outputStreams = getStreams(processor, processor.getSpec().getOutputs());
+
+				if (!isProcessorPodExists(processor)) {
+					createProcessorDeploymentIfMissing(processor, inputStreams, outputStreams);
+				}
+
+				if (isProcessorPodRunning(processor)) {
+					setProcessorStatus(processor, "true", "ProcessorDeployed");
+				}
+				else {
+					setProcessorStatus(processor, "false", "ProcessorDeploying");
+					return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+				}
+			}
 		}
 		catch (Exception e) {
-			logFailureEvent(processor, namespace, e.getMessage(), e);
-			return new Result(REQUEUE);
+			logFailureEvent(processor, processorNamespace, e.getMessage(), e);
+			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
 		}
+
 		return new Result(!REQUEUE);
 	}
 
-	private V1alpha1Stream findStream(String streamName, String namespace) throws ApiException {
-		String fieldSelector = "metadata.name=" + streamName;
-		V1alpha1StreamList streamList = api.listNamespacedStream(
-				namespace, null, null, null, fieldSelector, null, null,
-				null, null, null, false
-		);
-		// should only be one?
-		return streamList.getItems().size() > 0 ? streamList.getItems().get(0) : null;
+	private List<V1alpha1Stream> getStreams(V1alpha1Processor processor,
+			List<V1alpha1ProcessorSpecInputsSources> streamDefs) throws ApiException {
+
+		List<V1alpha1Stream> streams = new ArrayList<>();
+
+		for (V1alpha1ProcessorSpecInputsSources sd : streamDefs) {
+
+			String streamName = sd.getName();
+
+			V1alpha1StreamList streamList = api.listStreamForAllNamespaces(null, null,
+					"metadata.name=" + streamName, null, null,
+					null, null, null, null, null);
+
+			if (CollectionUtils.isEmpty(streamList.getItems())) {
+				setProcessorStatus(processor, "false", "ProcessorMissingStream");
+				throw new ApiException("Missing Stream: " + streamName);
+			}
+
+			// Should be only one. Fallback to the first if more than one.
+			// TODO perhaps we should add namespace as well?
+			if (streamList.getItems().size() > 1) {
+				LOG.warn(String.format("Many (%s) Streams with name: %s found! Only the first is used!",
+						streamList.getItems().size(), streamName));
+			}
+
+			V1alpha1Stream stream = streamList.getItems().get(0);
+
+			if (stream == null) {
+				setProcessorStatus(processor, "false", "ProcessorMissingStream");
+				throw new ApiException("MissingStream: " + sd.getName());
+			}
+			if (!isStreamReady(stream)) {
+				setProcessorStatus(processor, "false", "ProcessorStreamNotReady");
+				throw new ApiException("StreamNotReady: " + sd.getName());
+			}
+			streams.add(stream);
+		}
+		return streams;
+	}
+
+	public boolean isProcessorPodExists(V1alpha1Processor processor) {
+		try {
+			return coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
+					null,
+					"app in (uppercase-with-multibinder-grpc),streaming-runtime=" + processor.getMetadata().getName(),
+					null, null, null, null, null).getItems().size() == 1;
+		}
+		catch (ApiException e) {
+			LOG.warn("Failed to check the processor Pod existence", e);
+		}
+		return false;
+	}
+
+	private boolean isProcessorPodRunning(V1alpha1Processor processor) {
+		try {
+			return coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
+					"status.phase=Running",
+					"app in (uppercase-with-multibinder-grpc),streaming-runtime=" + processor.getMetadata().getName(),
+					null, null, null, null, null).getItems().size() == 1;
+		}
+		catch (ApiException e) {
+			LOG.warn("Failed to check if the processor Pod running", e);
+		}
+		return false;
+	}
+
+	private void createProcessorDeploymentIfMissing(V1alpha1Processor processor,
+			List<V1alpha1Stream> inputStreams, List<V1alpha1Stream> outputStreams) throws IOException, ApiException {
+
+
+		V1OwnerReference ownerReference = toOwnerReference(processor);
+
+		LOG.debug("Creating deployment {}/{}", processor.getMetadata().getNamespace(), ownerReference.getName());
+		V1Deployment body = yamlMapper.readValue(MULTIBINDER_GRPC_DEPLOYMENT_RESOURCE.getInputStream(), V1Deployment.class);
+		//body.getMetadata().setName(ownerReference.getName());
+		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
+		body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
+
+		// Env variables
+
+		// SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION - dataIn
+		// SPRING_CLOUD_STREAM_BINDINGS_INPUT_BINDER - kafka
+		// SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION - dataOut
+		// SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_BINDER - rabbit
+		//
+		// SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS - kafka:9092
+		// SPRING_CLOUD_STREAM_KAFKA_BINDER_ZKNODES - kafka-zk:2181
+		//
+		// SPRING_RABBITMQ_HOST - rabbitmq
+		// SPRING_RABBITMQ_PORT - 5672
+		// SPRING_RABBITMQ_USERNAME - guest
+		// SPRING_RABBITMQ_PASSWORD - guest
+
+		Map<String, String> envs = new HashMap<>();
+
+		// Assumes one input stream
+		V1alpha1ClusterStreamStatusStorageAddressServers inServer = inputStreams.get(0).getStatus()
+				.getStorageAddress().getServers().values().iterator().next();
+
+		if (inServer.getProtocol().equalsIgnoreCase("kafka")) {
+			envs.put("SPRING_CLOUD_STREAM_BINDINGS_INPUT_BINDER", "kafka");
+			envs.put("SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS", inServer.getVariables().get("brokers"));
+			envs.put("SPRING_CLOUD_STREAM_KAFKA_BINDER_ZKNODES", inServer.getVariables().get("zkNodes"));
+		}
+		else if (inServer.getProtocol().equalsIgnoreCase("rabbitmq")) {
+			envs.put("SPRING_CLOUD_STREAM_BINDINGS_INPUT_BINDER", "rabbit");
+			envs.put("SPRING_RABBITMQ_HOST", inServer.getVariables().get("host"));
+			envs.put("SPRING_RABBITMQ_PORT", inServer.getVariables().get("port"));
+			envs.put("SPRING_RABBITMQ_USERNAME", inServer.getVariables().get("username"));
+			envs.put("SPRING_RABBITMQ_PASSWORD", inServer.getVariables().get("password"));
+		}
+		envs.put("SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION", "dataIn"); // TODO
+
+		// Assumes one output stream
+		V1alpha1ClusterStreamStatusStorageAddressServers outServer = outputStreams.get(0).getStatus()
+				.getStorageAddress().getServers().values().iterator().next();
+
+		if (outServer.getProtocol().equalsIgnoreCase("kafka")) {
+			envs.put("SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_BINDER", "kafka");
+			envs.put("SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS", outServer.getVariables().get("brokers"));
+			envs.put("SPRING_CLOUD_STREAM_KAFKA_BINDER_ZKNODES", outServer.getVariables().get("zkNodes"));
+		}
+		else if (outServer.getProtocol().equalsIgnoreCase("rabbitmq")) {
+			envs.put("SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_BINDER", "rabbit");
+			envs.put("SPRING_RABBITMQ_HOST", outServer.getVariables().get("host"));
+			envs.put("SPRING_RABBITMQ_PORT", outServer.getVariables().get("port"));
+			envs.put("SPRING_RABBITMQ_USERNAME", outServer.getVariables().get("username"));
+			envs.put("SPRING_RABBITMQ_PASSWORD", outServer.getVariables().get("password"));
+		}
+		envs.put("SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION", "dataOut"); // TODO
+
+		V1Container container = body.getSpec().getTemplate().getSpec().getContainers().stream()
+				.filter(c -> "multibinder-grpc".equalsIgnoreCase(c.getName()))
+				.findFirst().get();
+
+		List<V1EnvVar> containerVariables = (container.getEnv() != null) ? container.getEnv() : new ArrayList<>();
+
+		containerVariables.addAll(envs.entrySet().stream()
+				.map(e -> new V1EnvVarBuilder()
+						.withName(e.getKey())
+						.withValue(e.getValue())
+						.build())
+				.collect(Collectors.toList()));
+
+		// Add sidecar containers
+		for (V1alpha1ProcessorSpecTemplateSpecContainers procContainer :
+				processor.getSpec().getTemplate().getSpec().getContainers()) {
+
+			body.getSpec().getTemplate().getSpec().getContainers().add(
+					new V1ContainerBuilder()
+							.withName(procContainer.getName())
+							.withImage(procContainer.getImage())
+							.withEnv(procContainer.getEnv().stream()
+									.map(e -> new V1EnvVarBuilder()
+											.withName(e.getName())
+											.withValue(e.getValue())
+											.build())
+									.collect(Collectors.toList()))
+							.build());
+		}
+
+		appsV1Api.createNamespacedDeployment(processor.getMetadata().getNamespace(), body, null, null, null);
+	}
+
+	private boolean isStreamReady(V1alpha1Stream stream) {
+		if (stream.getStatus() == null || stream.getStatus().getConditions() == null) {
+			return false;
+		}
+
+		return stream.getStatus().getConditions().stream()
+				.filter(c -> "Ready".equalsIgnoreCase(c.getType()))
+				.allMatch(c -> "true".equalsIgnoreCase(c.getStatus()));
 	}
 
 	private V1OwnerReference toOwnerReference(V1alpha1Processor processor) {
@@ -145,27 +308,31 @@ public class ProcessorReconciler implements Reconciler {
 		eventRecorder.logEvent(
 				EventRecorder.toObjectReference(processor).namespace(namespace),
 				null,
-				ClusterStreamConfiguration.CLUSTER_STREAM_CONTROLLER_NAME,
+				ProcessorConfiguration.PROCESSOR_CONTROLLER_NAME,
 				e.getClass().getName(),
 				message + ": " + e.getMessage(),
 				EventType.Warning);
 	}
 
-	public void setClusterStreamStatus(V1alpha1Processor processor, String type, String status, String reason,
-			String storageAddress) {
+	public void setProcessorStatus(V1alpha1Processor processor, String status, String reason) {
+
+		if (!hasProcessorConditionChanged(processor, status, reason)) {
+			return;
+		}
 
 		String patch = String.format("" +
 						"{\"status\": " +
 						"  {\"conditions\": " +
-						"      [{ \"type\": \"%s\", \"status\": \"%s\", \"lastTransitionTime\": \"%s\", \"reason\": \"%s\"}]," +
-						"     %s" +
+						"      [{ \"type\": \"%s\", \"status\": \"%s\", \"lastTransitionTime\": \"%s\", \"reason\": \"%s\"}]" +
 						"  }" +
 						"}",
-				type, status, ZonedDateTime.now(ZoneOffset.UTC), reason, storageAddress);
+				"Ready", status, ZonedDateTime.now(ZoneOffset.UTC), reason);
 		try {
-			PatchUtils.patch(V1alpha1ClusterStream.class,
-					() -> api.patchClusterStreamStatusCall(
+			PatchUtils.patch(
+					V1alpha1Processor.class,
+					() -> api.patchNamespacedProcessorStatusCall(
 							processor.getMetadata().getName(),
+							processor.getMetadata().getNamespace(),
 							new V1Patch(patch), null, null, null, null),
 					V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH,
 					api.getApiClient());
@@ -173,5 +340,20 @@ public class ProcessorReconciler implements Reconciler {
 		catch (ApiException e) {
 			LOG.error("Status API call failed: {}: {}, {}, with patch {}", e.getCode(), e.getMessage(), e.getResponseBody(), patch);
 		}
+	}
+
+	private boolean hasProcessorConditionChanged(V1alpha1Processor processor, String newReadyStatus, String newStatusReason) {
+		if (processor.getStatus() == null || processor.getStatus().getConditions() == null) {
+			return true;
+		}
+
+		return !processor.getStatus().getConditions().stream()
+				.filter(condition -> "Ready".equalsIgnoreCase(condition.getType()))
+				.allMatch(condition -> newReadyStatus.equalsIgnoreCase(condition.getStatus())
+						&& newStatusReason.equalsIgnoreCase(condition.getReason()));
+	}
+
+	private static Resource toResource(String uri) {
+		return new DefaultResourceLoader().getResource(uri);
 	}
 }

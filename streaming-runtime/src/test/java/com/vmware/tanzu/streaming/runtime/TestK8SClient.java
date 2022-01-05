@@ -15,7 +15,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import static org.awaitility.Awaitility.await;
 
 public class TestK8SClient {
-	private static final String CLUSTER_STREAM_CRD_URI = "file:/Users/ctzolov/Dev/projects/tanzu/streaming-runtime-parent/streaming-runtime-crds/cluster-stream-crd.yaml";
+	private static final String CLUSTER_STREAM_CRD_URI = "file:/Users/ctzolov/Dev/projects/tanzu/streaming-runtime-parent/crds/cluster-stream-crd.yaml";
 	private final AppsV1Api appsV1Api;
 	private final ApiextensionsV1Api apiextensionsV1Api;
 	private final CoreV1Api coreV1Api;

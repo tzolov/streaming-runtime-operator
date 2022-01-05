@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.vmware.tanzu.streaming</groupId>
-	<artifactId>streaming-runtime-parent</artifactId>
+	<artifactId>streaming-runtime-operator</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>streaming-runtime-parent</name>
-	<description>streaming-runtime-parent</description>
+	<name>streaming-runtime-operator</name>
+	<description>Streaming-Runtime Kubernetes Operator</description>
 	<packaging>pom</packaging>
 	<modules>
 		<module>streaming-runtime</module>

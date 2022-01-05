@@ -22,6 +22,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecInputs;
 import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecInputsSources;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecTemplate;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.List;
 /**
  * V1alpha1ProcessorSpec
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-05T23:01:45.170Z[Etc/UTC]")
 public class V1alpha1ProcessorSpec {
   public static final String SERIALIZED_NAME_INPUTS = "inputs";
   @SerializedName(SERIALIZED_NAME_INPUTS)
@@ -40,6 +41,10 @@ public class V1alpha1ProcessorSpec {
   public static final String SERIALIZED_NAME_OUTPUTS = "outputs";
   @SerializedName(SERIALIZED_NAME_OUTPUTS)
   private List<V1alpha1ProcessorSpecInputsSources> outputs = null;
+
+  public static final String SERIALIZED_NAME_TEMPLATE = "template";
+  @SerializedName(SERIALIZED_NAME_TEMPLATE)
+  private V1alpha1ProcessorSpecTemplate template;
 
 
   public V1alpha1ProcessorSpec inputs(V1alpha1ProcessorSpecInputs inputs) {
@@ -96,6 +101,29 @@ public class V1alpha1ProcessorSpec {
   }
 
 
+  public V1alpha1ProcessorSpec template(V1alpha1ProcessorSpecTemplate template) {
+    
+    this.template = template;
+    return this;
+  }
+
+   /**
+   * Get template
+   * @return template
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public V1alpha1ProcessorSpecTemplate getTemplate() {
+    return template;
+  }
+
+
+  public void setTemplate(V1alpha1ProcessorSpecTemplate template) {
+    this.template = template;
+  }
+
+
   @Override
   public boolean equals(java.lang.Object o) {
     if (this == o) {
@@ -106,12 +134,13 @@ public class V1alpha1ProcessorSpec {
     }
     V1alpha1ProcessorSpec v1alpha1ProcessorSpec = (V1alpha1ProcessorSpec) o;
     return Objects.equals(this.inputs, v1alpha1ProcessorSpec.inputs) &&
-        Objects.equals(this.outputs, v1alpha1ProcessorSpec.outputs);
+        Objects.equals(this.outputs, v1alpha1ProcessorSpec.outputs) &&
+        Objects.equals(this.template, v1alpha1ProcessorSpec.template);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(inputs, outputs);
+    return Objects.hash(inputs, outputs, template);
   }
 
 
@@ -121,6 +150,7 @@ public class V1alpha1ProcessorSpec {
     sb.append("class V1alpha1ProcessorSpec {\n");
     sb.append("    inputs: ").append(toIndentedString(inputs)).append("\n");
     sb.append("    outputs: ").append(toIndentedString(outputs)).append("\n");
+    sb.append("    template: ").append(toIndentedString(template)).append("\n");
     sb.append("}");
     return sb.toString();
   }

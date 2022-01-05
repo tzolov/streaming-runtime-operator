@@ -7,11 +7,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.MissingResourceException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamList;
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusStorageAddressServers;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusConditions;
 import com.vmware.tanzu.streaming.models.V1alpha1Stream;
 import com.vmware.tanzu.streaming.runtime.config.StreamConfiguration;
 import io.kubernetes.client.custom.V1Patch;
@@ -55,72 +56,75 @@ public class StreamReconciler implements Reconciler {
 
 		String streamName = request.getName();
 		String streamNamespace = request.getNamespace();
+
 		V1alpha1Stream stream = this.streamLister.namespace(streamNamespace).get(streamName);
 
-		final boolean toAdd = (stream.getMetadata() != null) && (stream.getMetadata().getGeneration() == null
-				|| stream.getMetadata().getGeneration() == 1) && (stream.getStatus() == null);
-
-		final boolean toUpdate = (stream.getMetadata() != null) && (stream.getMetadata().getGeneration() != null
-				&& stream.getMetadata().getGeneration() > 1
-				&& stream.getMetadata().getDeletionTimestamp() == null);
-
-		final boolean toDelete = stream.getMetadata().getDeletionTimestamp() != null;
-
-		String clusterStreamName = stream.getSpec().getStorage().getClusterStream();
-		if (!configMapUpdater.configMapExists(clusterStreamName)) {
-			logFailureEvent(stream, "find config map", "The targeted adoption center may not be ready,",
-					new MissingResourceException("ConfigMap not found", V1ConfigMap.class.getName(), V1ConfigMap.class.getName()));
-			//TODO catStatusEditor.setCatStatus(cat, "Ready", "False", "ConfigMapNotFound");
-			setStreamStatus(stream, "Ready", "false", "ConfigMapNotFound", null);
-			return new Result(REQUEUE);
+		if (stream == null) {
+			LOG.error(String.format("Missing Stream: %s/%s", streamNamespace, streamName));
+			return new Result(!REQUEUE);
 		}
 
 		try {
-			if (toAdd) {
-				V1alpha1ClusterStream clusterStream = findClusterStream(clusterStreamName);
-				if (clusterStream == null) {
-					throw new ApiException("Stream " + streamName + " without ClusterStream: " + clusterStreamName);
-				}
+			final boolean toDelete = stream.getMetadata().getDeletionTimestamp() != null;
 
-				if (!clusterStream.getStatus().getConditions().stream().map(c -> c.getStatus()).allMatch(s -> s.equalsIgnoreCase("true"))) {
-					ApiException e = new ApiException("Stream " + streamName + " with not completely deployed ClusterStream: " + clusterStreamName);
-					logFailureEvent(stream, "", e.getCode() + " - " + e.getResponseBody(), e);
-					return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
-				}
+			String clusterStreamName = stream.getSpec().getStorage().getClusterStream();
 
-				V1alpha1ClusterStreamStatusStorageAddressServers server
-						= clusterStream.getStatus().getStorageAddress().getServers().get("production");
-				if (!server.getProtocol().equalsIgnoreCase(stream.getSpec().getProtocol())) {
-					throw new ApiException("Stream (" + streamName + " ) protocol (" + stream.getSpec().getProtocol() +
-							") doesn't match the ClusterStream: " + clusterStreamName + " protocol:" + server.getProtocol());
+			if (toDelete) {
+				if (configMapUpdater.configMapExists(clusterStreamName)
+						&& configMapUpdater.isStreamExist(streamName, clusterStreamName)) {
+					configMapUpdater.removeStream(streamName, clusterStreamName);
 				}
-				addFinalizerIfNotFound(stream);
-				setStreamStatus(stream, "Ready", "false", "CreateStream", null);
-				// Update ConfigMap
-				ConfigMapUpdater.StreamsProperties sp = new ConfigMapUpdater.StreamsProperties();
-				sp.setStreams(new ArrayList<>());
-				ConfigMapUpdater.Stream str = new ConfigMapUpdater.Stream();
-				str.setName(streamName);
-				sp.getStreams().add(str);
-				configMapUpdater.updateConfigMap(clusterStreamName, sp);
-
-				// Update status
-				String storageAddressUpdate = "\"storageAddress\": " +
-						new ObjectMapper().writeValueAsString(clusterStream.getStatus().getStorageAddress());
-				setStreamStatus(stream, "Ready", "true", "ConfiguredStream", storageAddressUpdate);
-			}
-			else if (toUpdate) {
-				addFinalizerIfNotFound(stream);
-				// TODO update config map
-				setStreamStatus(stream, "Ready", "false", "UpdateStream", null);
-			}
-			else if (toDelete) {
-				configMapUpdater.removeStream(streamName, clusterStreamName);
 				removeFinalizer(stream);
-				setStreamStatus(stream, "Ready", "false", "DeleteStream", null);
 			}
 			else {
-				LOG.error("Illegal state: received a request {} with nothing to do", request);
+				if (!configMapUpdater.configMapExists(clusterStreamName)) {
+					setStreamStatus(stream, "false", "ConfigMapNotFound", null);
+					throw new MissingResourceException("ConfigMap not found", V1ConfigMap.class.getName(), V1ConfigMap.class.getName());
+				}
+
+				V1alpha1ClusterStream clusterStream = findClusterStream(clusterStreamName);
+
+				if (clusterStream == null) {
+					setStreamStatus(stream, "false", "NoClusterStreamFound", null);
+					throw new ApiException(String.format("No ClusterStream: %s found for Stream: %s", clusterStreamName, streamName));
+				}
+
+				if (clusterStream.getStatus() == null
+						|| clusterStream.getStatus().getConditions() == null
+						|| !clusterStream.getStatus().getConditions().stream()
+						.map(V1alpha1ClusterStreamStatusConditions::getStatus)
+						.allMatch("true"::equalsIgnoreCase)) {
+
+					setStreamStatus(stream, "false", "ClusterStreamNotReady", null);
+					throw new ApiException(String.format("Not Ready ClusterStream: %s for Stream: %s", clusterStreamName, streamName));
+				}
+
+				// Validate that the Stream and ClusterStream protocols match!
+				if (clusterStream.getStatus().getStorageAddress() == null
+						|| clusterStream.getStatus().getStorageAddress().getServers() == null
+						|| !clusterStream.getStatus().getStorageAddress().getServers().values().stream()
+						.allMatch(s -> s.getProtocol() != null ? s.getProtocol().equalsIgnoreCase(stream.getSpec().getProtocol()) : false)) {
+					setStreamStatus(stream, "false", "ProtocolMismatch", null);
+					throw new ApiException(String.format("Stream (%s) protocol (%s) doesn't match the ClusterStream: %s",
+							streamName, stream.getSpec().getProtocol(), clusterStreamName));
+				}
+
+				addConfigMapStreamIfNotFound(streamName, clusterStreamName);
+				addFinalizerIfNotFound(stream);
+
+				String storageAddress =
+						new ObjectMapper().writeValueAsString(clusterStream.getStatus().getStorageAddress());
+				boolean isStatusReady = configMapUpdater.isStreamExist(streamName, clusterStreamName)
+						&& StringUtils.hasText(storageAddress);
+				String readyStatus = isStatusReady ? "true" : "false";
+
+				String statusReason = isStatusReady ? "StreamDeployed" : "DeployingStream";
+
+				setStreamStatus(stream, readyStatus, statusReason, "\"storageAddress\": " + storageAddress);
+
+				if (!isStatusReady) {
+					return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+				}
 			}
 		}
 		catch (ApiException e) {
@@ -128,32 +132,45 @@ public class StreamReconciler implements Reconciler {
 				LOG.info("Required subresource is already present, skip creation.");
 				return new Result(!REQUEUE);
 			}
-			logFailureEvent(stream, "", e.getCode() + " - " + e.getResponseBody(), e);
-			return new Result(REQUEUE);
+			logFailureEvent(stream, e.getMessage(), e.getCode() + " - " + e.getResponseBody(), e);
+			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
 		}
 		catch (Exception e) {
 			logFailureEvent(stream, e.getMessage(), "", e);
-			return new Result(REQUEUE);
+			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
 		}
 		return new Result(!REQUEUE);
 	}
 
-	//private V1OwnerReference toOwnerReference(V1alpha1Stream stream) {
-	//	return new V1OwnerReference().controller(true)
-	//			.name(stream.getMetadata().getName())
-	//			.uid(stream.getMetadata().getUid())
-	//			.kind(stream.getKind())
-	//			.apiVersion(stream.getApiVersion())
-	//			.blockOwnerDeletion(true);
-	//}
+	private boolean hasConditionChanged(V1alpha1Stream stream, String newReadyStatus, String newStatusReason) {
+		if (stream.getStatus() == null || stream.getStatus().getConditions() == null) {
+			return true;
+		}
+
+		return !stream.getStatus().getConditions().stream().allMatch(
+				condition -> newReadyStatus.equalsIgnoreCase(condition.getStatus())
+						&& newStatusReason.equalsIgnoreCase(condition.getReason()));
+	}
+
+	private void addConfigMapStreamIfNotFound(String streamName, String clusterStreamName) throws JsonProcessingException, ApiException {
+		if (!configMapUpdater.isStreamExist(streamName, clusterStreamName)) {
+			// Update ConfigMap
+			ConfigMapUpdater.StreamsProperties sp = new ConfigMapUpdater.StreamsProperties();
+			sp.setStreams(new ArrayList<>());
+			ConfigMapUpdater.Stream str = new ConfigMapUpdater.Stream();
+			str.setName(streamName);
+			sp.getStreams().add(str);
+			configMapUpdater.updateConfigMap(clusterStreamName, sp);
+		}
+	}
 
 	private V1alpha1ClusterStream findClusterStream(String clusterStreamName) throws ApiException {
-		String fieldSelector = "metadata.name=" + clusterStreamName;
 
 		V1alpha1ClusterStreamList clusterStreamList = api.listClusterStream(
-				null, null, null, fieldSelector, null, null,
-				null, null, null, false
-		);
+				null, null, null,
+				"metadata.name=" + clusterStreamName, null, null,
+				null, null, null, false);
+
 		// should only be one?
 		return clusterStreamList.getItems().size() > 0 ? clusterStreamList.getItems().get(0) : null;
 	}
@@ -171,8 +188,12 @@ public class StreamReconciler implements Reconciler {
 				EventType.Warning);
 	}
 
-	private void setStreamStatus(V1alpha1Stream stream, String type, String status, String reason,
+	private void setStreamStatus(V1alpha1Stream stream, String status, String reason,
 			String storageAddress) {
+
+		if (!hasConditionChanged(stream, status, reason)) {
+			return;
+		}
 
 		if (StringUtils.hasText(storageAddress)) {
 			storageAddress = "," + storageAddress;
@@ -188,7 +209,7 @@ public class StreamReconciler implements Reconciler {
 						"     %s" +
 						"  }" +
 						"}",
-				type, status, ZonedDateTime.now(ZoneOffset.UTC), reason, storageAddress);
+				"Ready", status, ZonedDateTime.now(ZoneOffset.UTC), reason, storageAddress);
 		try {
 			PatchUtils.patch(
 					V1alpha1Stream.class,

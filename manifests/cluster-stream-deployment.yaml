@@ -16,10 +16,12 @@ spec:
         - name: cluster-stream-operator
           image: tzolov/streaming-runtime:0.0.1-SNAPSHOT
           env:
+            - name: STREAMINGRUNTIME_NAMESPACE
+              value: streaming-runtime
+            - name: STREAMINGRUNTIME_CONFIGMAPKEY
+              value: application-streams.yaml
             - name: LOGGING_COM_VMWARE_TANZU_STREAMING_RUNTIME
               value: debug
-#            - name: ADOPTION_CENTER_IMAGE
-#              value: springcloudservices/adoption-center:latest
           resources:
             requests:
               memory: "256Mi"

@@ -82,12 +82,13 @@ public class ClusterStreamConfiguration {
 
 	@Bean
 	public Lister<V1ConfigMap> configMapLister(
-			@Value("${streaming-runtime.namespace}") String adoptionCenterNamespace,
+			@Value("${streaming-runtime.namespace}") String streamingRuntimeNamespace,
 			ApiClient apiClient,
 			SharedInformerFactory sharedInformerFactory) {
 		GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> genericApi =
 				new GenericKubernetesApi<>(V1ConfigMap.class, V1ConfigMapList.class, "", "v1", "configmaps", apiClient);
-		SharedIndexInformer<V1ConfigMap> informer = sharedInformerFactory.sharedIndexInformerFor(genericApi, V1ConfigMap.class, 60 * 1000L, adoptionCenterNamespace);
+		SharedIndexInformer<V1ConfigMap> informer = sharedInformerFactory.sharedIndexInformerFor
+				(genericApi, V1ConfigMap.class, 60 * 1000L, streamingRuntimeNamespace);
 		return new Lister<>(informer.getIndexer());
 	}
 }

@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * V1alpha1ProcessorSpecInputsSources
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-03T18:15:35.468Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-05T23:01:45.170Z[Etc/UTC]")
 public class V1alpha1ProcessorSpecInputsSources {
   public static final String SERIALIZED_NAME_NAME = "name";
   @SerializedName(SERIALIZED_NAME_NAME)

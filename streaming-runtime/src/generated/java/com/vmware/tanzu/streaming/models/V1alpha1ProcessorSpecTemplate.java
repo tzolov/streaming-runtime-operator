@@ -20,67 +20,41 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecTemplateSpec;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1ClusterStreamSpecStorageServers
+ * V1alpha1ProcessorSpecTemplate
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-05T23:01:45.170Z[Etc/UTC]")
-public class V1alpha1ClusterStreamSpecStorageServers {
-  public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
-  @SerializedName(SERIALIZED_NAME_PROTOCOL)
-  private String protocol;
-
-  public static final String SERIALIZED_NAME_URL = "url";
-  @SerializedName(SERIALIZED_NAME_URL)
-  private String url;
+public class V1alpha1ProcessorSpecTemplate {
+  public static final String SERIALIZED_NAME_SPEC = "spec";
+  @SerializedName(SERIALIZED_NAME_SPEC)
+  private V1alpha1ProcessorSpecTemplateSpec spec;
 
 
-  public V1alpha1ClusterStreamSpecStorageServers protocol(String protocol) {
+  public V1alpha1ProcessorSpecTemplate spec(V1alpha1ProcessorSpecTemplateSpec spec) {
     
-    this.protocol = protocol;
+    this.spec = spec;
     return this;
   }
 
    /**
-   * Get protocol
-   * @return protocol
+   * Get spec
+   * @return spec
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public String getProtocol() {
-    return protocol;
+  public V1alpha1ProcessorSpecTemplateSpec getSpec() {
+    return spec;
   }
 
 
-  public void setProtocol(String protocol) {
-    this.protocol = protocol;
-  }
-
-
-  public V1alpha1ClusterStreamSpecStorageServers url(String url) {
-    
-    this.url = url;
-    return this;
-  }
-
-   /**
-   * Get url
-   * @return url
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public String getUrl() {
-    return url;
-  }
-
-
-  public void setUrl(String url) {
-    this.url = url;
+  public void setSpec(V1alpha1ProcessorSpecTemplateSpec spec) {
+    this.spec = spec;
   }
 
 
@@ -92,23 +66,21 @@ public class V1alpha1ClusterStreamSpecStorageServers {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpecStorageServers v1alpha1ClusterStreamSpecStorageServers = (V1alpha1ClusterStreamSpecStorageServers) o;
-    return Objects.equals(this.protocol, v1alpha1ClusterStreamSpecStorageServers.protocol) &&
-        Objects.equals(this.url, v1alpha1ClusterStreamSpecStorageServers.url);
+    V1alpha1ProcessorSpecTemplate v1alpha1ProcessorSpecTemplate = (V1alpha1ProcessorSpecTemplate) o;
+    return Objects.equals(this.spec, v1alpha1ProcessorSpecTemplate.spec);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(protocol, url);
+    return Objects.hash(spec);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpecStorageServers {\n");
-    sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
-    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("class V1alpha1ProcessorSpecTemplate {\n");
+    sb.append("    spec: ").append(toIndentedString(spec)).append("\n");
     sb.append("}");
     return sb.toString();
   }

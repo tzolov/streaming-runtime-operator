@@ -57,15 +57,26 @@ public class ConfigMapUpdater {
 
 	public V1ConfigMap removeStream(String streamNameToRemove, String clusterStreamName) throws ApiException, JsonProcessingException {
 		LOG.debug("Removing Stream {} from config map {}", streamNameToRemove, clusterStreamName);
-		StreamsProperties properties = getExistingAnimals(clusterStreamName);
+		StreamsProperties properties = getExistingStreams(clusterStreamName);
 		properties.getStreams().removeIf(stream -> stream.getName().equalsIgnoreCase(streamNameToRemove));
 		return updateConfigMap(clusterStreamName, properties);
 	}
 
-	private StreamsProperties getExistingAnimals(String clusterStreamName) throws JsonProcessingException {
+	public StreamsProperties getExistingStreams(String clusterStreamName) throws JsonProcessingException {
 		V1ConfigMap configMap = getExistingConfigMap(clusterStreamName);
 		String serializedStreams = configMap.getData().get(this.clusterStreamConfigMapKey);
 		return yamlMapper.readValue(serializedStreams, ApplicationYaml.class).getStreamsProperties();
+	}
+
+	public boolean isStreamExist(String streamName, String clusterStreamName) {
+		try {
+			return getExistingStreams(clusterStreamName).getStreams().stream()
+					.anyMatch(stream -> stream.getName().equalsIgnoreCase(streamName));
+		}
+		catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	public V1ConfigMap updateConfigMap(String clusterStreamName, StreamsProperties properties) throws JsonProcessingException, ApiException {

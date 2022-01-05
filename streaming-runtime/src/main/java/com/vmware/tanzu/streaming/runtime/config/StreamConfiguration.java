@@ -64,23 +64,16 @@ public class StreamConfiguration {
 					return true;
 				})
 				.withOnUpdateFilter((oldStream, newStream) -> {
-					boolean generationChanged = Objects.equals(oldStream.getMetadata().getGeneration(), newStream.getMetadata().getGeneration());
-					if (generationChanged) {
-						LOG.info(String.format(
-								"[%s] Event: Update Stream '%s' to '%s'",
-								STREAM_CONTROLLER_NAME, oldStream.getMetadata().getName(),
-								newStream.getMetadata().getName()));
-					} else {
-						LOG.info(String.format(
-								"[%s] Event: UNCHANGED Update for Stream '%s'",
-								STREAM_CONTROLLER_NAME, newStream.getMetadata().getName()));
-					}
-					return !generationChanged;
+					LOG.info(String.format(
+							"[%s] Event: Update Stream '%s' to '%s'",
+							STREAM_CONTROLLER_NAME, oldStream.getMetadata().getName(),
+							newStream.getMetadata().getName()));
+					return true;
 				})
 				.withOnDeleteFilter((deletedStream, deletedFinalStateUnknown) -> {
 					LOG.info(String.format("[%s] Event: Delete Stream '%s'",
 							STREAM_CONTROLLER_NAME, deletedStream.getMetadata().getName()));
-					return false;
+					return true;
 				})
 				.build();
 	}

@@ -41,6 +41,30 @@ spec:
                     properties:
                       name:
                         type: string
+                template:
+                  type: object
+                  properties:
+                    spec:
+                      type: object
+                      properties:
+                        containers:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              image:
+                                type: string
+                              env:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
             status:
               type: object
               properties:

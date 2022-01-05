@@ -64,29 +64,24 @@ public class ClusterStreamReconciler implements Reconciler {
 		V1alpha1ClusterStream clusterStream = this.clusterStreamLister.get(request.getName());
 		String namespace = (StringUtils.hasText(request.getNamespace())) ? request.getNamespace() : "default";
 
-		final boolean toAdd = (clusterStream.getMetadata() != null) && (clusterStream.getMetadata().getGeneration() == null
-				|| clusterStream.getMetadata().getGeneration() == 1) && (clusterStream.getStatus() == null);
-
-		final boolean toUpdate = (clusterStream.getMetadata() != null) && (clusterStream.getMetadata().getGeneration() != null
-				&& clusterStream.getMetadata().getGeneration() > 1
-				&& clusterStream.getMetadata().getDeletionTimestamp() == null);
+		if (clusterStream == null) {
+			LOG.error(String.format("Missing ClusterStream: %s", request.getName()));
+			return new Result(!REQUEUE);
+		}
 
 		try {
+			final boolean toDelete = clusterStream.getMetadata().getDeletionTimestamp() != null;
+
 			V1OwnerReference ownerReference = toOwnerReference(clusterStream);
-			for (V1alpha1ClusterStreamSpecStorageServers server : clusterStream.getSpec().getStorage().getServers()) {
-				ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(server.getProtocol());
-				if (toAdd) {
+			if (!toDelete) {
+				for (V1alpha1ClusterStreamSpecStorageServers server : clusterStream.getSpec().getStorage().getServers()) {
+					ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(server.getProtocol());
 					if (!configMapUpdater.configMapExists(ownerReference.getName())) {
 						configMapUpdater.createConfigMap(ownerReference);
 					}
 					protocolDeploymentEditor.createMissingServicesAndDeployments(ownerReference, namespace);
 				}
-				else if (toUpdate) {
-					//TODO
-					System.out.println("UPDATE");
-				}
 			}
-
 			//Status Update
 			List<String> serverAddresses = clusterStream.getSpec().getStorage().getServers().stream()
 					.map(server -> this.protocolDeploymentEditors.get(server.getProtocol()))
@@ -100,14 +95,7 @@ public class ClusterStreamReconciler implements Reconciler {
 			String reason = isStatusReady ? "ProtocolDeployed" : "ProtocolDeployment";
 			String storageAddress = String.format("\"storageAddress\": { \"servers\": { %s } }", String.join(",", serverAddresses));
 
-			// Avoid status update loops
-			if (clusterStream.getStatus() == null
-					|| clusterStream.getStatus().getConditions() == null
-					|| !clusterStream.getStatus().getConditions().stream().allMatch(
-							condition -> readyStatus.equalsIgnoreCase(condition.getStatus())
-									&& reason.equalsIgnoreCase(condition.getReason()))) {
-				setClusterStreamStatus(clusterStream, "Ready", readyStatus, reason, storageAddress);
-			}
+			setClusterStreamStatus(clusterStream, "Ready", readyStatus, reason, storageAddress);
 
 			if (!isStatusReady) {
 				return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
@@ -151,8 +139,13 @@ public class ClusterStreamReconciler implements Reconciler {
 				EventType.Warning);
 	}
 
-	public void setClusterStreamStatus(V1alpha1ClusterStream clusterStream, String type, String status, String reason,
+	private void setClusterStreamStatus(V1alpha1ClusterStream clusterStream, String type, String status, String reason,
 			String storageAddress) {
+
+		if (!hasConditionChanged(clusterStream, status, reason)) {
+			return;
+		}
+
 
 		String patch = String.format("" +
 						"{\"status\": " +
@@ -174,4 +167,15 @@ public class ClusterStreamReconciler implements Reconciler {
 			LOG.error("Status API call failed: {}: {}, {}, with patch {}", e.getCode(), e.getMessage(), e.getResponseBody(), patch);
 		}
 	}
+
+	private boolean hasConditionChanged(V1alpha1ClusterStream clusterStream, String newReadyStatus, String newStatusReason) {
+		if (clusterStream.getStatus() == null || clusterStream.getStatus().getConditions() == null) {
+			return true;
+		}
+
+		return !clusterStream.getStatus().getConditions().stream().allMatch(
+				condition -> newReadyStatus.equalsIgnoreCase(condition.getStatus())
+						&& newStatusReason.equalsIgnoreCase(condition.getReason()));
+	}
+
 }

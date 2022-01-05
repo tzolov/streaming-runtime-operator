@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script orchestrates the code generation procedure. It is executed inside a crdgen
+# This utility script orchestrates the code generation procedure. It is executed inside a crdgen
 # container in order to minimize the environment dependencies on the host, being Docker only.
+
+# NOTE: use the generate-streaming-runtime-crd.sh to generate the Streaming Runtime java models.
 
 OUTPUT_DIR=${OUTPUT_DIR:-}
 KUBERNETES_CRD_GROUP_PREFIX=${KUBERNETES_CRD_GROUP_PREFIX:-}
