@@ -199,9 +199,9 @@ public class ProcessorReconciler implements Reconciler {
 
 		// Env variables
 
-		// SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION - dataIn
+		// SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION - Stream's metadata.name or dedicated key/attribute ?
 		// SPRING_CLOUD_STREAM_BINDINGS_INPUT_BINDER - kafka
-		// SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION - dataOut
+		// SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION - Stream's metadata.name or dedicated key/attribute ?
 		// SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_BINDER - rabbit
 		//
 		// SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS - kafka:9092
@@ -215,7 +215,8 @@ public class ProcessorReconciler implements Reconciler {
 		Map<String, String> envs = new HashMap<>();
 
 		// Assumes one input stream
-		V1alpha1ClusterStreamStatusStorageAddressServers inServer = inputStreams.get(0).getStatus()
+		V1alpha1Stream inputStream = inputStreams.get(0);
+		V1alpha1ClusterStreamStatusStorageAddressServers inServer = inputStream.getStatus()
 				.getStorageAddress().getServers().values().iterator().next();
 
 		if (inServer.getProtocol().equalsIgnoreCase("kafka")) {
@@ -230,10 +231,11 @@ public class ProcessorReconciler implements Reconciler {
 			envs.put("SPRING_RABBITMQ_USERNAME", inServer.getVariables().get("username"));
 			envs.put("SPRING_RABBITMQ_PASSWORD", inServer.getVariables().get("password"));
 		}
-		envs.put("SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION", "dataIn"); // TODO
+		envs.put("SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION", inputStream.getMetadata().getName()); // TODO
 
 		// Assumes one output stream
-		V1alpha1ClusterStreamStatusStorageAddressServers outServer = outputStreams.get(0).getStatus()
+		V1alpha1Stream outputStream = outputStreams.get(0);
+		V1alpha1ClusterStreamStatusStorageAddressServers outServer = outputStream.getStatus()
 				.getStorageAddress().getServers().values().iterator().next();
 
 		if (outServer.getProtocol().equalsIgnoreCase("kafka")) {
@@ -248,7 +250,7 @@ public class ProcessorReconciler implements Reconciler {
 			envs.put("SPRING_RABBITMQ_USERNAME", outServer.getVariables().get("username"));
 			envs.put("SPRING_RABBITMQ_PASSWORD", outServer.getVariables().get("password"));
 		}
-		envs.put("SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION", "dataOut"); // TODO
+		envs.put("SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION", outputStream.getMetadata().getName()); // TODO
 
 		V1Container container = body.getSpec().getTemplate().getSpec().getContainers().stream()
 				.filter(c -> "multibinder-grpc".equalsIgnoreCase(c.getName()))

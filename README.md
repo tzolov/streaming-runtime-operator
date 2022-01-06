@@ -1,5 +1,6 @@
 # Streaming Runtime Operator
-POC
+POC - experimenting with various the streaming runtime ides.
+
 ## Quick Start
 
 #### Starting Minikube
@@ -25,3 +26,56 @@ kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-ope
 kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-operator/main/samples/test-all.yaml' -n streaming-runtime
 ```
 
+Then check how the `ClusterStream`'s, `Stream`'s and `Processor` are deployed also verify that the multibiner processor
+and sidecars containers are running in the dedicated Pod.
+
+```shell
+kubectl get custerstreams
+kubectl get streams -n streaming-runtime
+kubectl get processors -n streaming-runtime
+```
+
+Also there is a dedicated ConfigMap managed by the Stream reconciler. 
+
+## CRDs 
+
+You can find all CRDs under the `./crds` folder.
+### Stream
+Represent storage-at-rest of time-ordered attribute-partitioned data, such as a Kafka topic.
+
+#### ClusterStream
+Backs the Streams in the ala PV model. The ClusterSteam is controlled and provisioned by the administrator 
+though dynamic provisioner could be provided
+
+### Processor
+represent user code running a transformation on a set of input Streams to a set of output Streams. 
+
+
+## Build
+
+#### CRDs
+
+Every time the CRDs under the `./crds` folder are modified make sure to runt the regnerate the models and installation.
+
+* Generate CRDs Java api and models
+```shell
+./scripts/generate-streaming-runtime-crd.sh
+```
+Generated code is under the `./streaming-runtime/src/generated/java/com/vmware/tanzu/streaming` folder
+
+* Build operator installation yaml
+```shell
+./scripts/build-streaming-runtime-operator-installer.sh
+```
+producing the `install.yaml`. 
+
+The `./scripts/all.sh` combines above two steps.
+
+
+##### Build the operator code and image
+
+```shell
+./mvnw clean install -Pnative -DskipTests spring-boot:build-image
+docker push tzolov/streaming-runtime:0.0.1-SNAPSHOT
+```
+(For no-native build remove the `-Pnative`).

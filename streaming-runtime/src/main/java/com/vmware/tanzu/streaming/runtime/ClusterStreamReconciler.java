@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -82,6 +83,7 @@ public class ClusterStreamReconciler implements Reconciler {
 					protocolDeploymentEditor.createMissingServicesAndDeployments(ownerReference, namespace);
 				}
 			}
+
 			//Status Update
 			List<String> serverAddresses = clusterStream.getSpec().getStorage().getServers().stream()
 					.map(server -> this.protocolDeploymentEditors.get(server.getProtocol()))
@@ -93,16 +95,14 @@ public class ClusterStreamReconciler implements Reconciler {
 			boolean isStatusReady = !CollectionUtils.isEmpty(serverAddresses);
 			String readyStatus = isStatusReady ? "true" : "false";
 			String reason = isStatusReady ? "ProtocolDeployed" : "ProtocolDeployment";
-			String storageAddress = String.format("\"storageAddress\": { \"servers\": { %s } }", String.join(",", serverAddresses));
 
-			setClusterStreamStatus(clusterStream, "Ready", readyStatus, reason, storageAddress);
+			setClusterStreamStatus(clusterStream, readyStatus, reason, serverAddresses);
 
 			if (!isStatusReady) {
 				return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
 			}
 		}
-		catch (
-				ApiException e) {
+		catch (ApiException e) {
 			if (e.getCode() == 409) {
 				LOG.info("Required subresource is already present, skip creation.");
 				return new Result(!REQUEUE);
@@ -110,8 +110,7 @@ public class ClusterStreamReconciler implements Reconciler {
 			logFailureEvent(clusterStream, namespace, e.getCode() + " - " + e.getResponseBody(), e);
 			return new Result(REQUEUE);
 		}
-		catch (
-				Exception e) {
+		catch (Exception e) {
 			logFailureEvent(clusterStream, namespace, e.getMessage(), e);
 			return new Result(REQUEUE);
 		}
@@ -139,32 +138,34 @@ public class ClusterStreamReconciler implements Reconciler {
 				EventType.Warning);
 	}
 
-	private void setClusterStreamStatus(V1alpha1ClusterStream clusterStream, String type, String status, String reason,
-			String storageAddress) {
+	private void setClusterStreamStatus(V1alpha1ClusterStream clusterStream, String status, String reason,
+			List<String> serverAddresses) {
 
-		if (!hasConditionChanged(clusterStream, status, reason)) {
-			return;
-		}
+		serverAddresses = (serverAddresses != null) ? serverAddresses : new ArrayList<>();
 
-
-		String patch = String.format("" +
-						"{\"status\": " +
-						"  {\"conditions\": " +
-						"      [{ \"type\": \"%s\", \"status\": \"%s\", \"lastTransitionTime\": \"%s\", \"reason\": \"%s\"}]," +
-						"     %s" +
-						"  }" +
-						"}",
-				type, status, ZonedDateTime.now(ZoneOffset.UTC), reason, storageAddress);
-		try {
-			PatchUtils.patch(V1alpha1ClusterStream.class,
-					() -> api.patchClusterStreamStatusCall(
-							clusterStream.getMetadata().getName(),
-							new V1Patch(patch), null, null, null, null),
-					V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH,
-					api.getApiClient());
-		}
-		catch (ApiException e) {
-			LOG.error("Status API call failed: {}: {}, {}, with patch {}", e.getCode(), e.getMessage(), e.getResponseBody(), patch);
+		if (hasConditionChanged(clusterStream, status, reason)) {
+			String patch = String.format("" +
+							"{\"status\": " +
+							"  {\"conditions\": " +
+							"      [{ \"type\": \"%s\", " +
+							"         \"status\": \"%s\", " +
+							"         \"lastTransitionTime\": \"%s\", " +
+							"         \"reason\": \"%s\"}]," +
+							"   \"storageAddress\": { \"servers\": { %s } }" +
+							"  }" +
+							"}",
+					"Ready", status, ZonedDateTime.now(ZoneOffset.UTC), reason, String.join(",", serverAddresses));
+			try {
+				PatchUtils.patch(V1alpha1ClusterStream.class,
+						() -> api.patchClusterStreamStatusCall(
+								clusterStream.getMetadata().getName(),
+								new V1Patch(patch), null, null, null, null),
+						V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH,
+						api.getApiClient());
+			}
+			catch (ApiException e) {
+				LOG.error("Status API call failed: {}: {}, {}, with patch {}", e.getCode(), e.getMessage(), e.getResponseBody(), patch);
+			}
 		}
 	}
 
