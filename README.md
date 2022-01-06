@@ -30,7 +30,7 @@ Then check how the `ClusterStream`'s, `Stream`'s and `Processor` are deployed al
 and sidecars containers are running in the dedicated Pod.
 
 ```shell
-kubectl get custerstreams
+kubectl get clusterstreams
 kubectl get streams -n streaming-runtime
 kubectl get processors -n streaming-runtime
 ```
