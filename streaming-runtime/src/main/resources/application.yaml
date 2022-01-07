@@ -1,3 +1,4 @@
 streaming-runtime:
   namespace: streaming-runtime
   configMapKey: application-streams.yaml
+  enablePortForward: false

@@ -54,7 +54,7 @@ public class ClusterStreamReconciler implements Reconciler {
 		this.clusterStreamLister = new Lister<>(clusterStreamInformer.getIndexer());
 		this.protocolDeploymentEditors =
 				Stream.of(protocolDeploymentEditors)
-						.collect(Collectors.toMap(ProtocolDeploymentEditor::getProtocolName, Function.identity()));
+						.collect(Collectors.toMap(ProtocolDeploymentEditor::getProtocolDeploymentEditorName, Function.identity()));
 		this.eventRecorder = eventRecorder;
 		this.configMapUpdater = configMapUpdater;
 	}
@@ -75,20 +75,27 @@ public class ClusterStreamReconciler implements Reconciler {
 
 			V1OwnerReference ownerReference = toOwnerReference(clusterStream);
 			if (!toDelete) {
-				for (V1alpha1ClusterStreamSpecStorageServers server : clusterStream.getSpec().getStorage().getServers()) {
-					ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(server.getProtocol());
+				for (V1alpha1ClusterStreamSpecStorageServers server : clusterStream.getSpec().getStorage()
+						.getServers()) {
+					String protocolAdapterName = getProtocolAdapterName(clusterStream.getSpec().getStorage()
+							.getAttributes(), server.getProtocol());
+					ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(protocolAdapterName);
 					if (!configMapUpdater.configMapExists(ownerReference.getName())) {
 						configMapUpdater.createConfigMap(ownerReference);
 					}
-					protocolDeploymentEditor.createMissingServicesAndDeployments(ownerReference, namespace);
+					protocolDeploymentEditor.createIfNotFound(ownerReference, namespace);
+					protocolDeploymentEditor.postCreateConfiguration(ownerReference, namespace, clusterStream);
 				}
+
 			}
 
 			//Status Update
 			List<String> serverAddresses = clusterStream.getSpec().getStorage().getServers().stream()
-					.map(server -> this.protocolDeploymentEditors.get(server.getProtocol()))
-					.filter(protocol -> protocol.isAllRunning(ownerReference, namespace))
-					.map(protocol -> protocol.storageAddress(ownerReference, namespace))
+					.map(server -> this.protocolDeploymentEditors.get(
+							getProtocolAdapterName(clusterStream.getSpec().getStorage()
+									.getAttributes(), server.getProtocol())))
+					.filter(protocol -> protocol.isRunning(ownerReference, namespace))
+					.map(protocol -> protocol.getStorageAddress(ownerReference, namespace))
 					.filter(Objects::nonNull)
 					.collect(Collectors.toList());
 
@@ -108,13 +115,21 @@ public class ClusterStreamReconciler implements Reconciler {
 				return new Result(!REQUEUE);
 			}
 			logFailureEvent(clusterStream, namespace, e.getCode() + " - " + e.getResponseBody(), e);
-			return new Result(REQUEUE);
+			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
 		}
 		catch (Exception e) {
 			logFailureEvent(clusterStream, namespace, e.getMessage(), e);
-			return new Result(REQUEUE);
+			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
 		}
 		return new Result(!REQUEUE);
+	}
+
+	private String getProtocolAdapterName(Map<String, String> attributes, String protocolName) {
+		String protocolAdapterName = (attributes != null) ? attributes.get("protocolAdapterName") : "";
+		if (!StringUtils.hasText(protocolAdapterName)) {
+			protocolAdapterName = protocolName;
+		}
+		return protocolAdapterName;
 	}
 
 	private V1OwnerReference toOwnerReference(V1alpha1ClusterStream clusterStream) {
@@ -127,7 +142,8 @@ public class ClusterStreamReconciler implements Reconciler {
 	}
 
 	private void logFailureEvent(V1alpha1ClusterStream clusterStream, String namespace, String reason, Exception e) {
-		String message = String.format("Failed to deploy Cluster Stream %s: %s", clusterStream.getMetadata().getName(), reason);
+		String message = String.format("Failed to deploy Cluster Stream %s: %s", clusterStream.getMetadata()
+				.getName(), reason);
 		LOG.error(message, e);
 		eventRecorder.logEvent(
 				EventRecorder.toObjectReference(clusterStream).namespace(namespace),

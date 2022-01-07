@@ -29,10 +29,10 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 	private final AppsV1Api appsV1Api;
 	private final ObjectMapper yamlMapper;
 
-	private static final Resource zkService = toResource("classpath:manifests/kafka/kafka-zk-svc.yaml");
-	private static final Resource zkDeployment = toResource("classpath:manifests/kafka/kafka-zk-deployment.yaml");
-	private static final Resource kafkaService = toResource("classpath:manifests/kafka/kafka-svc.yaml");
-	private static final Resource kafkaDeployment = toResource("classpath:manifests/kafka/kafka-deployment.yaml");
+	private static final Resource zkService = toResource("classpath:manifests/protocol/kafka/kafka-zk-svc.yaml");
+	private static final Resource zkDeployment = toResource("classpath:manifests/protocol/kafka/kafka-zk-deployment.yaml");
+	private static final Resource kafkaService = toResource("classpath:manifests/protocol/kafka/kafka-svc.yaml");
+	private static final Resource kafkaDeployment = toResource("classpath:manifests/protocol/kafka/kafka-deployment.yaml");
 
 	public KafkaDeploymentEditor(CoreV1Api coreV1Api, AppsV1Api appsV1Api, ObjectMapper yamlMapper) {
 		this.coreV1Api = coreV1Api;
@@ -46,29 +46,24 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 	}
 
 	@Override
-	public boolean createMissingServicesAndDeployments(V1OwnerReference ownerReference, String namespace) throws IOException, ApiException {
+	public void createIfNotFound(V1OwnerReference ownerReference, String namespace) throws ApiException {
 
-		boolean changed = false;
 		if (CollectionUtils.isEmpty(findServices(namespace, null, "app=kafka"))) {
 			this.createService(ownerReference, zkService, namespace);
 			this.createService(ownerReference, kafkaService, namespace);
-			changed = true;
 		}
 
 		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=kafka-zk,component=kafka-zk"))) {
 			this.createDeployment(ownerReference, zkDeployment, namespace, "digitalwonderland/zookeeper");
-			changed = true;
 		}
 
 		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=kafka,component=kafka-broker"))) {
 			this.createDeployment(ownerReference, kafkaDeployment, namespace, "digitalwonderland/zookeeper");
-			changed = true;
 		}
-		return changed;
 	}
 
 	@Override
-	public boolean isAllRunning(V1OwnerReference ownerReference, String namespace)  {
+	public boolean isRunning(V1OwnerReference ownerReference, String namespace) {
 		try {
 			int size = findPods(namespace, "status.phase=Running", "app in (kafka,kafka-zk)").size();
 			return size == 2;
@@ -80,7 +75,7 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 	}
 
 	@Override
-	public String storageAddress(V1OwnerReference ownerReference, String namespace) {
+	public String getStorageAddress(V1OwnerReference ownerReference, String namespace) {
 
 		return "" +
 				"     \"production\": {" +
@@ -88,11 +83,10 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 				"         \"protocol\": \"kafka\", " +
 				"         \"protocolVersion\": \"1.0.0\", " +
 				"         \"variables\": { " +
-				"              \"brokers\": \"kafka:9092\", " +
-				"              \"zkNodes\": \"kafka-zk:2181\" " +
+				"              \"brokers\": \"kafka." + namespace + ".svc.cluster.local:9092\", " +
+				"              \"zkNodes\": \"kafka-zk." + namespace +".svc.cluster.local:2181\" " +
 				"           } " +
 				"       }";
-
 	}
 
 	private List<V1Pod> findPods(String namesapce, String fieldSelector, String labelSelector) throws ApiException {
@@ -107,31 +101,41 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 
 	private V1Deployment createDeployment(V1OwnerReference ownerReference,
 			Resource deploymentYaml, String appNamespace,
-			String appImage) throws IOException, ApiException {
-		LOG.debug("Creating deployment {}/{}", appNamespace, ownerReference.getName());
-		V1Deployment body = yamlMapper.readValue(deploymentYaml.getInputStream(), V1Deployment.class);
-		//body.getMetadata().setName(ownerReference.getName());
-		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
-		//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
-		//body.getSpec().getTemplate().getMetadata().getLabels().put("app", ownerReference.getName());
+			String appImage) throws ApiException {
+		try {
+			LOG.debug("Creating deployment {}/{}", appNamespace, ownerReference.getName());
+			V1Deployment body = yamlMapper.readValue(deploymentYaml.getInputStream(), V1Deployment.class);
+			//body.getMetadata().setName(ownerReference.getName());
+			body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
+			//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
+			//body.getSpec().getTemplate().getMetadata().getLabels().put("app", ownerReference.getName());
 //		body.getSpec().getTemplate().getSpec().getVolumes().get(0).getConfigMap().setName(ownerReference.getName());
 //		body.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(appImage);
-		body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
+			body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
 
 
-		return appsV1Api.createNamespacedDeployment(appNamespace, body, null, null, null);
+			return appsV1Api.createNamespacedDeployment(appNamespace, body, null, null, null);
+		}
+		catch (IOException ioException) {
+			throw new ApiException(ioException);
+		}
 	}
 
 	private V1Service createService(V1OwnerReference ownerReference,
-			Resource serviceYaml, String appNamespace) throws IOException, ApiException {
-		LOG.debug("Creating service {}/{}", appNamespace, ownerReference.getName());
-		V1Service body = yamlMapper.readValue(serviceYaml.getInputStream(), V1Service.class);
-		//body.getMetadata().setName(ownerReference.getName());
-		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
-		//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
-		body.getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
+			Resource serviceYaml, String appNamespace) throws ApiException {
+		try {
+			LOG.debug("Creating service {}/{}", appNamespace, ownerReference.getName());
+			V1Service body = yamlMapper.readValue(serviceYaml.getInputStream(), V1Service.class);
+			//body.getMetadata().setName(ownerReference.getName());
+			body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
+			//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
+			body.getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
 
-		return coreV1Api.createNamespacedService(appNamespace, body, null, null, null);
+			return coreV1Api.createNamespacedService(appNamespace, body, null, null, null);
+		}
+		catch (IOException ioe) {
+			throw new ApiException(ioe);
+		}
 	}
 
 	private static Resource toResource(String uri) {

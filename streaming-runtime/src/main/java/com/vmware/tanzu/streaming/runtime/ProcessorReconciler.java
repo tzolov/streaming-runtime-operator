@@ -102,6 +102,7 @@ public class ProcessorReconciler implements Reconciler {
 					createProcessorDeploymentIfMissing(processor, inputStreams, outputStreams);
 				}
 
+				// Status update
 				if (isProcessorPodRunning(processor)) {
 					setProcessorStatus(processor, "true", "ProcessorDeployed");
 				}

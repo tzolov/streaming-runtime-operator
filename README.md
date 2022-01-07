@@ -1,5 +1,5 @@
 # Streaming Runtime Operator
-POC - experimenting with various the streaming runtime ides.
+POC - testing streaming runtime ideas.
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-ope
 kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-operator/main/samples/test-all.yaml' -n streaming-runtime
 ```
 
-Then check how the `ClusterStream`'s, `Stream`'s and `Processor` are deployed also verify that the multibiner processor
+Then check how the `ClusterStream`'s, `Stream`'s and `Processor` are deployed also verify that the multibinder processor
 and sidecars containers are running in the dedicated Pod.
 
 ```shell

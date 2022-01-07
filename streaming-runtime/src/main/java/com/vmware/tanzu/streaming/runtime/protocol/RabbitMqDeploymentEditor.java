@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 @Component
-public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor{
+public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitMqDeploymentEditor.class);
 
@@ -29,8 +29,8 @@ public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor{
 	private final AppsV1Api appsV1Api;
 	private final ObjectMapper yamlMapper;
 
-	private static final Resource rabbitmqService = toResource("classpath:manifests/rabbitmq/rabbitmq-svc.yaml");
-	private static final Resource rabbitmqDeployment = toResource("classpath:manifests/rabbitmq/rabbitmq-deployment.yaml");
+	private static final Resource rabbitmqService = toResource("classpath:manifests/protocol/rabbitmq/rabbitmq-svc.yaml");
+	private static final Resource rabbitmqDeployment = toResource("classpath:manifests/protocol/rabbitmq/rabbitmq-deployment.yaml");
 
 	public RabbitMqDeploymentEditor(CoreV1Api coreV1Api, AppsV1Api appsV1Api, ObjectMapper yamlMapper) {
 		this.coreV1Api = coreV1Api;
@@ -44,23 +44,19 @@ public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor{
 	}
 
 	@Override
-	public boolean createMissingServicesAndDeployments(V1OwnerReference ownerReference, String namespace) throws IOException, ApiException {
+	public void createIfNotFound(V1OwnerReference ownerReference, String namespace) throws ApiException {
 
-		boolean changed = false;
-		if (CollectionUtils.isEmpty(findServices(namespace, null,"app=rabbitmq"))) {
+		if (CollectionUtils.isEmpty(findServices(namespace, null, "app=rabbitmq"))) {
 			this.createService(ownerReference, rabbitmqService, namespace);
-			changed = true;
 		}
 
-		if (CollectionUtils.isEmpty(findPods(namespace, null,"app=rabbitmq"))) {
+		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=rabbitmq"))) {
 			this.createDeployment(ownerReference, rabbitmqDeployment, namespace, "rabbitmq:3-management");
-			changed = true;
 		}
-		return changed;
 	}
 
 	@Override
-	public boolean isAllRunning(V1OwnerReference ownerReference, String namespace) {
+	public boolean isRunning(V1OwnerReference ownerReference, String namespace) {
 		try {
 			int size = findPods(namespace, "status.phase=Running", "app in (rabbitmq)").size();
 			return size == 1;
@@ -72,14 +68,14 @@ public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor{
 	}
 
 	@Override
-	public String storageAddress(V1OwnerReference ownerReference, String namespace) {
+	public String getStorageAddress(V1OwnerReference ownerReference, String namespace) {
 		return "" +
 				"     \"production\": {" +
 				"         \"url\": \"localhost:8080\", " +
 				"         \"protocol\": \"rabbitmq\", " +
 				"         \"protocolVersion\": \"1.0.0\", " +
 				"         \"variables\": { " +
-				"              \"host\": \"rabbitmq\", " +
+				"              \"host\": \"rabbitmq." + namespace + ".svc.cluster.local\", " +
 				"              \"port\": \"5672\", " +
 				"              \"username\": \"guest\", " + // TODO: WRONG SECRETS!
 				"              \"password\": \"guest\" " +
@@ -100,31 +96,41 @@ public class RabbitMqDeploymentEditor implements ProtocolDeploymentEditor{
 
 	private V1Deployment createDeployment(V1OwnerReference ownerReference,
 			Resource deploymentYaml, String appNamespace,
-			String appImage) throws IOException, ApiException {
-		LOG.debug("Creating deployment {}/{}", appNamespace, ownerReference.getName());
-		V1Deployment body = yamlMapper.readValue(deploymentYaml.getInputStream(), V1Deployment.class);
-		//body.getMetadata().setName(ownerReference.getName());
-		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
-		//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
-		//body.getSpec().getTemplate().getMetadata().getLabels().put("app", ownerReference.getName());
+			String appImage) throws ApiException {
+		try {
+			LOG.debug("Creating deployment {}/{}", appNamespace, ownerReference.getName());
+			V1Deployment body = yamlMapper.readValue(deploymentYaml.getInputStream(), V1Deployment.class);
+			//body.getMetadata().setName(ownerReference.getName());
+			body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
+			//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
+			//body.getSpec().getTemplate().getMetadata().getLabels().put("app", ownerReference.getName());
 //		body.getSpec().getTemplate().getSpec().getVolumes().get(0).getConfigMap().setName(ownerReference.getName());
 //		body.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(appImage);
-		body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
+			body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
 
+			return appsV1Api.createNamespacedDeployment(appNamespace, body, null, null, null);
+		}
+		catch (IOException e) {
+			throw new ApiException(e);
+		}
 
-		return appsV1Api.createNamespacedDeployment(appNamespace, body, null, null, null);
 	}
 
 	private V1Service createService(V1OwnerReference ownerReference,
-			Resource serviceYaml, String appNamespace) throws IOException, ApiException {
-		LOG.debug("Creating service {}/{}", appNamespace, ownerReference.getName());
-		V1Service body = yamlMapper.readValue(serviceYaml.getInputStream(), V1Service.class);
-		//body.getMetadata().setName(ownerReference.getName());
-		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
-		//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
-		body.getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
+			Resource serviceYaml, String appNamespace) throws ApiException {
+		try {
+			LOG.debug("Creating service {}/{}", appNamespace, ownerReference.getName());
+			V1Service body = yamlMapper.readValue(serviceYaml.getInputStream(), V1Service.class);
+			//body.getMetadata().setName(ownerReference.getName());
+			body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
+			//body.getSpec().getSelector().getMatchLabels().put("app", ownerReference.getName());
+			body.getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
 
-		return coreV1Api.createNamespacedService(appNamespace, body, null, null, null);
+			return coreV1Api.createNamespacedService(appNamespace, body, null, null, null);
+		}
+		catch (IOException e) {
+			throw new ApiException(e);
+		}
 	}
 
 	private static Resource toResource(String uri) {
