@@ -33,6 +33,8 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 	private static final Resource zkDeployment = toResource("classpath:manifests/protocol/kafka/kafka-zk-deployment.yaml");
 	private static final Resource kafkaService = toResource("classpath:manifests/protocol/kafka/kafka-svc.yaml");
 	private static final Resource kafkaDeployment = toResource("classpath:manifests/protocol/kafka/kafka-deployment.yaml");
+	private static final Resource schemaRegistryDeployment = toResource("classpath:manifests/protocol/kafka/kafka-schema-registry-deployment.yaml");
+	private static final Resource schemaRegistryService = toResource("classpath:manifests/protocol/kafka/kafka-schema-registry-svc.yaml");
 
 	public KafkaDeploymentEditor(CoreV1Api coreV1Api, AppsV1Api appsV1Api, ObjectMapper yamlMapper) {
 		this.coreV1Api = coreV1Api;
@@ -51,6 +53,7 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 		if (CollectionUtils.isEmpty(findServices(namespace, null, "app=kafka"))) {
 			this.createService(ownerReference, zkService, namespace);
 			this.createService(ownerReference, kafkaService, namespace);
+			this.createService(ownerReference, schemaRegistryService, namespace);
 		}
 
 		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=kafka-zk,component=kafka-zk"))) {
@@ -60,13 +63,18 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=kafka,component=kafka-broker"))) {
 			this.createDeployment(ownerReference, kafkaDeployment, namespace, "digitalwonderland/zookeeper");
 		}
+
+		if (CollectionUtils.isEmpty(findPods(namespace, null, "app=s-registry,component=s-registry"))) {
+			this.createDeployment(ownerReference, schemaRegistryDeployment, namespace, "");
+		}
+
 	}
 
 	@Override
 	public boolean isRunning(V1OwnerReference ownerReference, String namespace) {
 		try {
-			int size = findPods(namespace, "status.phase=Running", "app in (kafka,kafka-zk)").size();
-			return size == 2;
+			int size = findPods(namespace, "status.phase=Running", "app in (kafka,kafka-zk,s-registry)").size();
+			return size == 3;
 		}
 		catch (ApiException e) {
 			e.printStackTrace();
@@ -84,7 +92,8 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 				"         \"protocolVersion\": \"1.0.0\", " +
 				"         \"variables\": { " +
 				"              \"brokers\": \"kafka." + namespace + ".svc.cluster.local:9092\", " +
-				"              \"zkNodes\": \"kafka-zk." + namespace +".svc.cluster.local:2181\" " +
+				"              \"zkNodes\": \"kafka-zk." + namespace + ".svc.cluster.local:2181\", " +
+				"              \"schemaRegistry\": \"http://s-registry." + namespace + ".svc.cluster.local:8081\" " +
 				"           } " +
 				"       }";
 	}
@@ -119,6 +128,13 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 		catch (IOException ioException) {
 			throw new ApiException(ioException);
 		}
+		catch (ApiException apiException) {
+			if (apiException.getCode() == 409) {
+				LOG.info("Required deployment is already deployed: " + ownerReference.getName());
+				return null;
+			}
+			throw apiException;
+		}
 	}
 
 	private V1Service createService(V1OwnerReference ownerReference,
@@ -136,6 +152,14 @@ public class KafkaDeploymentEditor implements ProtocolDeploymentEditor {
 		catch (IOException ioe) {
 			throw new ApiException(ioe);
 		}
+		catch (ApiException apiException) {
+			if (apiException.getCode() == 409) {
+				LOG.info("Required service is already deployed: " + ownerReference.getName());
+				return null;
+			}
+			throw apiException;
+		}
+
 	}
 
 	private static Resource toResource(String uri) {

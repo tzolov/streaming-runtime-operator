@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * V1alpha1ProcessorSpec
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-06T12:27:57.247Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-19T07:36:51.131Z[Etc/UTC]")
 public class V1alpha1ProcessorSpec {
   public static final String SERIALIZED_NAME_INPUTS = "inputs";
   @SerializedName(SERIALIZED_NAME_INPUTS)

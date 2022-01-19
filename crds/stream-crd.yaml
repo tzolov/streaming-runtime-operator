@@ -39,6 +39,30 @@ spec:
                   properties:
                     clusterStream:
                       type: string
+                attributes:
+                  type: object
+                  additionalProperties:
+                    type: string
+                payloadSchema:
+                  type: object
+                  properties:
+                    namespace:
+                      type: string
+                    type:
+                      type: string
+                    name:
+                      type: string
+                    aliases:
+                      type: array
+                      items:
+                        type: string
+                    doc:
+                      type: string
+                    fields:
+                      type: array
+                      items:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
             status:
               type: object
               properties:

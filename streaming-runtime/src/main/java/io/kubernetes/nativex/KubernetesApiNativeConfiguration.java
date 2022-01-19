@@ -52,9 +52,9 @@ import static org.springframework.nativex.hint.TypeAccess.values;
 								"io.kubernetes.client.extended.controller.Controller",
 								"io.kubernetes.client.util.generic.GenericKubernetesApi$StatusPatch",
 								"io.kubernetes.client.util.Watch$Response",
-								"com.vmware.tanzu.streaming.runtime.ConfigMapUpdater$ApplicationYaml",
-								"com.vmware.tanzu.streaming.runtime.ConfigMapUpdater$StreamsProperties",
-								"com.vmware.tanzu.streaming.runtime.ConfigMapUpdater$Stream"}) //
+								"com.vmware.tanzu.streaming.runtime.ProcessorReconciler$ApplicationYaml",
+								"com.vmware.tanzu.streaming.runtime.ProcessorReconciler$Sql",
+								"com.vmware.tanzu.streaming.runtime.ProcessorReconciler$Aggregation"}) //
 		}//
 )
 public class KubernetesApiNativeConfiguration implements NativeConfiguration {

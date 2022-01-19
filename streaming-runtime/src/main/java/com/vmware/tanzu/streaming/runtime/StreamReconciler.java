@@ -5,13 +5,16 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.MissingResourceException;
+import java.util.HashMap;
+import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStream;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamList;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpec;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorage;
+import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamSpecStorageServers;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusConditions;
 import com.vmware.tanzu.streaming.models.V1alpha1Stream;
 import com.vmware.tanzu.streaming.runtime.config.StreamConfiguration;
@@ -23,12 +26,14 @@ import io.kubernetes.client.extended.event.EventType;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.PatchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Component
@@ -40,15 +45,16 @@ public class StreamReconciler implements Reconciler {
 
 	private final Lister<V1alpha1Stream> streamLister;
 	private final EventRecorder eventRecorder;
-	private final ConfigMapUpdater configMapUpdater;
+	private final Boolean autoProvisionClusterStream;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
 
 	public StreamReconciler(SharedIndexInformer<V1alpha1Stream> streamInformer,
-			StreamingTanzuVmwareComV1alpha1Api api, EventRecorder eventRecorder, ConfigMapUpdater configMapUpdater) {
+			StreamingTanzuVmwareComV1alpha1Api api, EventRecorder eventRecorder,
+			@Value("${streaming-runtime.autoProvisionClusterStream}") Boolean autoProvisionClusterStream) {
 		this.api = api;
 		this.streamLister = new Lister<>(streamInformer.getIndexer());
 		this.eventRecorder = eventRecorder;
-		this.configMapUpdater = configMapUpdater;
+		this.autoProvisionClusterStream = autoProvisionClusterStream;
 	}
 
 	@Override
@@ -70,23 +76,23 @@ public class StreamReconciler implements Reconciler {
 			String clusterStreamName = stream.getSpec().getStorage().getClusterStream();
 
 			if (toDelete) {
-				if (configMapUpdater.configMapExists(clusterStreamName)
-						&& configMapUpdater.isStreamExist(streamName, clusterStreamName)) {
-					configMapUpdater.removeStream(streamName, clusterStreamName);
-				}
 				removeFinalizer(stream);
 			}
 			else {
-				if (!configMapUpdater.configMapExists(clusterStreamName)) {
-					setStreamStatus(stream, "false", "ConfigMapNotFound", null);
-					throw new MissingResourceException("ConfigMap not found", V1ConfigMap.class.getName(), V1ConfigMap.class.getName());
-				}
 
 				V1alpha1ClusterStream clusterStream = findClusterStream(clusterStreamName);
 
 				if (clusterStream == null) {
-					setStreamStatus(stream, "false", "NoClusterStreamFound", null);
-					throw new ApiException(String.format("No ClusterStream: %s found for Stream: %s", clusterStreamName, streamName));
+					if (this.autoProvisionClusterStream) {
+						autoProvisionCusterStream(clusterStreamName, stream.getSpec().getProtocol(), "url",
+								stream.getSpec().getStreamMode(), stream.getSpec().getKeys());
+						setStreamStatus(stream, "false", "AutoProvisionClusterStream", null);
+						throw new ApiException(String.format("Auto-provision ClusterStream: %s for Stream: %s", clusterStreamName, streamName));
+					}
+					else {
+						setStreamStatus(stream, "false", "NoClusterStreamFound", null);
+						throw new ApiException(String.format("No ClusterStream: %s found for Stream: %s", clusterStreamName, streamName));
+					}
 				}
 
 				if (clusterStream.getStatus() == null
@@ -103,19 +109,18 @@ public class StreamReconciler implements Reconciler {
 				if (clusterStream.getStatus().getStorageAddress() == null
 						|| clusterStream.getStatus().getStorageAddress().getServers() == null
 						|| !clusterStream.getStatus().getStorageAddress().getServers().values().stream()
-						.allMatch(s -> s.getProtocol() != null ? s.getProtocol().equalsIgnoreCase(stream.getSpec().getProtocol()) : false)) {
+						.allMatch(s -> s.getProtocol() != null ? s.getProtocol()
+								.equalsIgnoreCase(stream.getSpec().getProtocol()) : false)) {
 					setStreamStatus(stream, "false", "ProtocolMismatch", null);
 					throw new ApiException(String.format("Stream (%s) protocol (%s) doesn't match the ClusterStream: %s",
 							streamName, stream.getSpec().getProtocol(), clusterStreamName));
 				}
 
-				addConfigMapStreamIfNotFound(streamName, clusterStreamName);
 				addFinalizerIfNotFound(stream);
 
 				String storageAddress =
 						new ObjectMapper().writeValueAsString(clusterStream.getStatus().getStorageAddress());
-				boolean isStatusReady = configMapUpdater.isStreamExist(streamName, clusterStreamName)
-						&& StringUtils.hasText(storageAddress);
+				boolean isStatusReady = StringUtils.hasText(storageAddress);
 				String readyStatus = isStatusReady ? "true" : "false";
 
 				String statusReason = isStatusReady ? "StreamDeployed" : "DeployingStream";
@@ -150,18 +155,6 @@ public class StreamReconciler implements Reconciler {
 		return !stream.getStatus().getConditions().stream().allMatch(
 				condition -> newReadyStatus.equalsIgnoreCase(condition.getStatus())
 						&& newStatusReason.equalsIgnoreCase(condition.getReason()));
-	}
-
-	private void addConfigMapStreamIfNotFound(String streamName, String clusterStreamName) throws JsonProcessingException, ApiException {
-		if (!configMapUpdater.isStreamExist(streamName, clusterStreamName)) {
-			// Update ConfigMap
-			ConfigMapUpdater.StreamsProperties sp = new ConfigMapUpdater.StreamsProperties();
-			sp.setStreams(new ArrayList<>());
-			ConfigMapUpdater.Stream str = new ConfigMapUpdater.Stream();
-			str.setName(streamName);
-			sp.getStreams().add(str);
-			configMapUpdater.updateConfigMap(clusterStreamName, sp);
-		}
 	}
 
 	private V1alpha1ClusterStream findClusterStream(String clusterStreamName) throws ApiException {
@@ -229,7 +222,8 @@ public class StreamReconciler implements Reconciler {
 
 	private void addFinalizerIfNotFound(V1alpha1Stream stream) throws ApiException {
 		LOG.debug("Checking for existing finalizers");
-		boolean notFound = stream.getMetadata().getFinalizers() == null || stream.getMetadata().getFinalizers().isEmpty();
+		boolean notFound = stream.getMetadata().getFinalizers() == null || stream.getMetadata().getFinalizers()
+				.isEmpty();
 		if (notFound) {
 			LOG.debug("Finalizers not found, adding one");
 			streamPatch(stream, "{\"metadata\":{\"finalizers\":[\"" + FINALIZER_STRING + "\"]}}",
@@ -239,8 +233,15 @@ public class StreamReconciler implements Reconciler {
 
 	private V1alpha1Stream removeFinalizer(V1alpha1Stream stream) throws ApiException {
 		// Currently, we don't have other finalizers so for now we just recklessly remove all finalizers.
-		return streamPatch(stream, "[{\"op\": \"remove\", \"path\": \"/metadata/finalizers\"}]",
-				V1Patch.PATCH_FORMAT_JSON_PATCH);
+		LOG.info("Try to remove Finalizers for stream: " + stream.getMetadata().getName());
+		try {
+			return streamPatch(stream, "[{\"op\": \"remove\", \"path\": \"/metadata/finalizers\"}]",
+					V1Patch.PATCH_FORMAT_JSON_PATCH);
+		}
+		catch (ApiException e) {
+			LOG.error("Finalizer removal problem", e);
+			throw e;
+		}
 	}
 
 	// NOTE: The api.patchNamespacedStreamCall(...) won't patch Stream's status! For this use the
@@ -255,5 +256,41 @@ public class StreamReconciler implements Reconciler {
 						null, null, null, null),
 				patchFormat,
 				api.getApiClient());
+	}
+
+	private void autoProvisionCusterStream(String clusterStreamName, String protocol, String url,
+			List<String> streamMode, List<String> keys) throws ApiException {
+
+		if (findClusterStream(clusterStreamName) != null) {
+			return;
+		}
+
+		V1alpha1ClusterStream cs = new V1alpha1ClusterStream();
+		cs.setApiVersion("streaming.tanzu.vmware.com/v1alpha1");
+		cs.setKind("ClusterStream");
+
+		cs.setMetadata(new V1ObjectMeta());
+		cs.getMetadata().setName(clusterStreamName);
+		cs.getMetadata().setLabels(new HashMap<>());
+		cs.getMetadata().getLabels().put("name", clusterStreamName);
+		cs.setSpec(new V1alpha1ClusterStreamSpec());
+		if (!CollectionUtils.isEmpty(keys)) {
+			cs.getSpec().setKeys(keys);
+		}
+		else {
+			cs.getSpec().setKeys(new ArrayList<>());
+		}
+
+		cs.getSpec().setStreamModes((CollectionUtils.isEmpty(streamMode) ? List.of("read") : streamMode));
+
+		cs.getSpec().setStorage(new V1alpha1ClusterStreamSpecStorage());
+		cs.getSpec().getStorage().setReclaimPolicy("Retain");
+		cs.getSpec().getStorage().setServers(new ArrayList<>());
+		V1alpha1ClusterStreamSpecStorageServers server = new V1alpha1ClusterStreamSpecStorageServers();
+		server.setProtocol(protocol);
+		server.setUrl(url);
+		cs.getSpec().getStorage().getServers().add(server);
+
+		api.createClusterStream(cs, null, null, null);
 	}
 }

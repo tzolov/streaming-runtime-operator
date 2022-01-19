@@ -20,6 +20,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecInputsDebug;
 import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecInputsSources;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -30,11 +31,73 @@ import java.util.List;
 /**
  * V1alpha1ProcessorSpecInputs
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-06T12:27:57.247Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-19T07:36:51.131Z[Etc/UTC]")
 public class V1alpha1ProcessorSpecInputs {
+  public static final String SERIALIZED_NAME_DEBUG = "debug";
+  @SerializedName(SERIALIZED_NAME_DEBUG)
+  private V1alpha1ProcessorSpecInputsDebug debug;
+
+  public static final String SERIALIZED_NAME_QUERY = "query";
+  @SerializedName(SERIALIZED_NAME_QUERY)
+  private List<String> query = null;
+
   public static final String SERIALIZED_NAME_SOURCES = "sources";
   @SerializedName(SERIALIZED_NAME_SOURCES)
   private List<V1alpha1ProcessorSpecInputsSources> sources = null;
+
+
+  public V1alpha1ProcessorSpecInputs debug(V1alpha1ProcessorSpecInputsDebug debug) {
+    
+    this.debug = debug;
+    return this;
+  }
+
+   /**
+   * Get debug
+   * @return debug
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public V1alpha1ProcessorSpecInputsDebug getDebug() {
+    return debug;
+  }
+
+
+  public void setDebug(V1alpha1ProcessorSpecInputsDebug debug) {
+    this.debug = debug;
+  }
+
+
+  public V1alpha1ProcessorSpecInputs query(List<String> query) {
+    
+    this.query = query;
+    return this;
+  }
+
+  public V1alpha1ProcessorSpecInputs addQueryItem(String queryItem) {
+    if (this.query == null) {
+      this.query = new ArrayList<>();
+    }
+    this.query.add(queryItem);
+    return this;
+  }
+
+   /**
+   * Get query
+   * @return query
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public List<String> getQuery() {
+    return query;
+  }
+
+
+  public void setQuery(List<String> query) {
+    this.query = query;
+  }
 
 
   public V1alpha1ProcessorSpecInputs sources(List<V1alpha1ProcessorSpecInputsSources> sources) {
@@ -77,12 +140,14 @@ public class V1alpha1ProcessorSpecInputs {
       return false;
     }
     V1alpha1ProcessorSpecInputs v1alpha1ProcessorSpecInputs = (V1alpha1ProcessorSpecInputs) o;
-    return Objects.equals(this.sources, v1alpha1ProcessorSpecInputs.sources);
+    return Objects.equals(this.debug, v1alpha1ProcessorSpecInputs.debug) &&
+        Objects.equals(this.query, v1alpha1ProcessorSpecInputs.query) &&
+        Objects.equals(this.sources, v1alpha1ProcessorSpecInputs.sources);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(sources);
+    return Objects.hash(debug, query, sources);
   }
 
 
@@ -90,6 +155,8 @@ public class V1alpha1ProcessorSpecInputs {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1ProcessorSpecInputs {\n");
+    sb.append("    debug: ").append(toIndentedString(debug)).append("\n");
+    sb.append("    query: ").append(toIndentedString(query)).append("\n");
     sb.append("    sources: ").append(toIndentedString(sources)).append("\n");
     sb.append("}");
     return sb.toString();

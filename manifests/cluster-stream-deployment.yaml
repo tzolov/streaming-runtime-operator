@@ -14,14 +14,12 @@ spec:
       serviceAccountName: streaming-runtime
       containers:
         - name: cluster-stream-operator
-          image: tzolov/streaming-runtime:0.0.1-SNAPSHOT
+          image: tzolov/streaming-runtime:0.0.2-SNAPSHOT
           env:
-            - name: STREAMINGRUNTIME_NAMESPACE
-              value: streaming-runtime
-            - name: STREAMINGRUNTIME_CONFIGMAPKEY
-              value: application-streams.yaml
             - name: LOGGING_COM_VMWARE_TANZU_STREAMING_RUNTIME
               value: debug
+            - name: STREAMINGRUNTIME_AUTO_PROVISION_CLUSTER_STREAM
+              value: "false"
           resources:
             requests:
               memory: "256Mi"

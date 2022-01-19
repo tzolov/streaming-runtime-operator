@@ -20,21 +20,32 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecPayloadSchema;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecStorage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * V1alpha1StreamSpec
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-06T12:27:57.247Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-19T07:36:51.131Z[Etc/UTC]")
 public class V1alpha1StreamSpec {
+  public static final String SERIALIZED_NAME_ATTRIBUTES = "attributes";
+  @SerializedName(SERIALIZED_NAME_ATTRIBUTES)
+  private Map<String, String> attributes = null;
+
   public static final String SERIALIZED_NAME_KEYS = "keys";
   @SerializedName(SERIALIZED_NAME_KEYS)
   private List<String> keys = null;
+
+  public static final String SERIALIZED_NAME_PAYLOAD_SCHEMA = "payloadSchema";
+  @SerializedName(SERIALIZED_NAME_PAYLOAD_SCHEMA)
+  private V1alpha1StreamSpecPayloadSchema payloadSchema;
 
   public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
   @SerializedName(SERIALIZED_NAME_PROTOCOL)
@@ -47,6 +58,37 @@ public class V1alpha1StreamSpec {
   public static final String SERIALIZED_NAME_STREAM_MODE = "streamMode";
   @SerializedName(SERIALIZED_NAME_STREAM_MODE)
   private List<String> streamMode = null;
+
+
+  public V1alpha1StreamSpec attributes(Map<String, String> attributes) {
+    
+    this.attributes = attributes;
+    return this;
+  }
+
+  public V1alpha1StreamSpec putAttributesItem(String key, String attributesItem) {
+    if (this.attributes == null) {
+      this.attributes = new HashMap<>();
+    }
+    this.attributes.put(key, attributesItem);
+    return this;
+  }
+
+   /**
+   * Get attributes
+   * @return attributes
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public Map<String, String> getAttributes() {
+    return attributes;
+  }
+
+
+  public void setAttributes(Map<String, String> attributes) {
+    this.attributes = attributes;
+  }
 
 
   public V1alpha1StreamSpec keys(List<String> keys) {
@@ -77,6 +119,29 @@ public class V1alpha1StreamSpec {
 
   public void setKeys(List<String> keys) {
     this.keys = keys;
+  }
+
+
+  public V1alpha1StreamSpec payloadSchema(V1alpha1StreamSpecPayloadSchema payloadSchema) {
+    
+    this.payloadSchema = payloadSchema;
+    return this;
+  }
+
+   /**
+   * Get payloadSchema
+   * @return payloadSchema
+  **/
+  @javax.annotation.Nullable
+  @ApiModelProperty(value = "")
+
+  public V1alpha1StreamSpecPayloadSchema getPayloadSchema() {
+    return payloadSchema;
+  }
+
+
+  public void setPayloadSchema(V1alpha1StreamSpecPayloadSchema payloadSchema) {
+    this.payloadSchema = payloadSchema;
   }
 
 
@@ -166,7 +231,9 @@ public class V1alpha1StreamSpec {
       return false;
     }
     V1alpha1StreamSpec v1alpha1StreamSpec = (V1alpha1StreamSpec) o;
-    return Objects.equals(this.keys, v1alpha1StreamSpec.keys) &&
+    return Objects.equals(this.attributes, v1alpha1StreamSpec.attributes) &&
+        Objects.equals(this.keys, v1alpha1StreamSpec.keys) &&
+        Objects.equals(this.payloadSchema, v1alpha1StreamSpec.payloadSchema) &&
         Objects.equals(this.protocol, v1alpha1StreamSpec.protocol) &&
         Objects.equals(this.storage, v1alpha1StreamSpec.storage) &&
         Objects.equals(this.streamMode, v1alpha1StreamSpec.streamMode);
@@ -174,7 +241,7 @@ public class V1alpha1StreamSpec {
 
   @Override
   public int hashCode() {
-    return Objects.hash(keys, protocol, storage, streamMode);
+    return Objects.hash(attributes, keys, payloadSchema, protocol, storage, streamMode);
   }
 
 
@@ -182,7 +249,9 @@ public class V1alpha1StreamSpec {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1StreamSpec {\n");
+    sb.append("    attributes: ").append(toIndentedString(attributes)).append("\n");
     sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("    payloadSchema: ").append(toIndentedString(payloadSchema)).append("\n");
     sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
     sb.append("    storage: ").append(toIndentedString(storage)).append("\n");
     sb.append("    streamMode: ").append(toIndentedString(streamMode)).append("\n");

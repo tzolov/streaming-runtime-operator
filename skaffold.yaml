@@ -14,7 +14,8 @@ build:
     - image: tzolov/streaming-runtime
       custom:
         buildCommand: |
-          ./mvnw clean install -Pnative -DskipTests spring-boot:build-image; docker push tzolov/streaming-runtime:0.0.1-SNAPSHOT
+          ./mvnw clean install -Pnative -DskipTests spring-boot:build-image && \
+          docker push tzolov/streaming-runtime:0.0.2-SNAPSHOT
 deploy:
   kubectl:
     manifests:

@@ -43,12 +43,11 @@ public class ClusterStreamReconciler implements Reconciler {
 	private final Lister<V1alpha1ClusterStream> clusterStreamLister;
 	private final Map<String, ProtocolDeploymentEditor> protocolDeploymentEditors;
 	private final EventRecorder eventRecorder;
-	private final ConfigMapUpdater configMapUpdater;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
 
 	public ClusterStreamReconciler(SharedIndexInformer<V1alpha1ClusterStream> clusterStreamInformer,
 			ProtocolDeploymentEditor[] protocolDeploymentEditors, StreamingTanzuVmwareComV1alpha1Api api,
-			EventRecorder eventRecorder, ConfigMapUpdater configMapUpdater) {
+			EventRecorder eventRecorder) {
 
 		this.api = api;
 		this.clusterStreamLister = new Lister<>(clusterStreamInformer.getIndexer());
@@ -56,7 +55,6 @@ public class ClusterStreamReconciler implements Reconciler {
 				Stream.of(protocolDeploymentEditors)
 						.collect(Collectors.toMap(ProtocolDeploymentEditor::getProtocolDeploymentEditorName, Function.identity()));
 		this.eventRecorder = eventRecorder;
-		this.configMapUpdater = configMapUpdater;
 	}
 
 	@Override
@@ -80,9 +78,6 @@ public class ClusterStreamReconciler implements Reconciler {
 					String protocolAdapterName = getProtocolAdapterName(clusterStream.getSpec().getStorage()
 							.getAttributes(), server.getProtocol());
 					ProtocolDeploymentEditor protocolDeploymentEditor = this.protocolDeploymentEditors.get(protocolAdapterName);
-					if (!configMapUpdater.configMapExists(ownerReference.getName())) {
-						configMapUpdater.createConfigMap(ownerReference);
-					}
 					protocolDeploymentEditor.createIfNotFound(ownerReference, namespace);
 					protocolDeploymentEditor.postCreateConfiguration(ownerReference, namespace, clusterStream);
 				}

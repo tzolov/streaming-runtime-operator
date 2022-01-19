@@ -10,8 +10,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
 import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusStorageAddressServers;
@@ -31,12 +33,16 @@ import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
+import io.kubernetes.client.openapi.models.V1KeyToPathBuilder;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +57,13 @@ public class ProcessorReconciler implements Reconciler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessorReconciler.class);
 
+	private static final Pattern IN_SQL_STREAM_NAME_PATTERN = Pattern.compile("\\[\\[STREAM:(\\S*)\\]\\]", Pattern.CASE_INSENSITIVE);
+
 	private static final Resource MULTIBINDER_GRPC_DEPLOYMENT_RESOURCE =
 			toResource("classpath:manifests/multibinder-grpc/multibinder-grpc-deployment.yaml");
+
+	private static final Resource SQL_AGGREGATION_CONTAINER_TEMPLATE =
+			toResource("classpath:manifests/multibinder-grpc/sql-aggregation-container-template.yaml");
 
 	private static final boolean REQUEUE = true;
 
@@ -61,14 +72,17 @@ public class ProcessorReconciler implements Reconciler {
 	private final EventRecorder eventRecorder;
 	private final AppsV1Api appsV1Api;
 	private final ObjectMapper yamlMapper;
+	private final ConfigMapUpdater configMapUpdater;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
+	private final ProcessorSqlHelper processorSqlHelper;
 
 	public ProcessorReconciler(SharedIndexInformer<V1alpha1Processor> processorInformer,
 			StreamingTanzuVmwareComV1alpha1Api api,
 			CoreV1Api coreV1Api,
 			EventRecorder eventRecorder,
 			AppsV1Api appsV1Api,
-			ObjectMapper yamlMapper) {
+			ObjectMapper yamlMapper,
+			ConfigMapUpdater configMapUpdater2) {
 
 		this.api = api;
 		this.processorLister = new Lister<>(processorInformer.getIndexer());
@@ -76,6 +90,8 @@ public class ProcessorReconciler implements Reconciler {
 		this.eventRecorder = eventRecorder;
 		this.appsV1Api = appsV1Api;
 		this.yamlMapper = yamlMapper;
+		this.configMapUpdater = configMapUpdater2;
+		this.processorSqlHelper = new ProcessorSqlHelper();
 	}
 
 	@Override
@@ -98,8 +114,29 @@ public class ProcessorReconciler implements Reconciler {
 				List<V1alpha1Stream> inputStreams = getStreams(processor, processor.getSpec().getInputs().getSources());
 				List<V1alpha1Stream> outputStreams = getStreams(processor, processor.getSpec().getOutputs());
 
+
+				List<String> sqlQueries = processor.getSpec().getInputs().getQuery();
+				Map<String, V1alpha1Stream> sqlPlaceholderToStreamMap = null;
+				if (isQueryPresent(processor)) {
+					// Extract the stream names used in the SQL statements and map those to the in-query placeholders.
+					// Later the placeholders will be replaced by the Schema (e.g. Tables) names.
+					Map<String, String> sqlPlaceholderToStreamName = processorSqlHelper.getInSqlPlaceholderToStreamNameMap(sqlQueries);
+
+					// Convert the stream names into V1alpha1Stream instances to validate their definition.
+					sqlPlaceholderToStreamMap = new HashMap<>();
+					for (Map.Entry<String, String> e : sqlPlaceholderToStreamName.entrySet()) {
+						V1alpha1Stream sqlStream = getStream(processor, e.getValue());
+						sqlPlaceholderToStreamMap.put(e.getKey(), sqlStream);
+					}
+				}
+
 				if (!isProcessorPodExists(processor)) {
 					createProcessorDeploymentIfMissing(processor, inputStreams, outputStreams);
+				}
+
+				if (isQueryPresent(processor) && !CollectionUtils.isEmpty(sqlPlaceholderToStreamMap)) {
+					createSqlAppConfigMap(processor,
+							processorSqlHelper.getDdlAndSqlStatements(sqlQueries, sqlPlaceholderToStreamMap));
 				}
 
 				// Status update
@@ -120,44 +157,52 @@ public class ProcessorReconciler implements Reconciler {
 		return new Result(!REQUEUE);
 	}
 
+
+	private boolean isQueryPresent(V1alpha1Processor processor) {
+		return !CollectionUtils.isEmpty(processor.getSpec().getInputs().getQuery());
+	}
+
 	private List<V1alpha1Stream> getStreams(V1alpha1Processor processor,
 			List<V1alpha1ProcessorSpecInputsSources> streamDefs) throws ApiException {
 
 		List<V1alpha1Stream> streams = new ArrayList<>();
-
 		for (V1alpha1ProcessorSpecInputsSources sd : streamDefs) {
-
-			String streamName = sd.getName();
-
-			V1alpha1StreamList streamList = api.listStreamForAllNamespaces(null, null,
-					"metadata.name=" + streamName, null, null,
-					null, null, null, null, null);
-
-			if (CollectionUtils.isEmpty(streamList.getItems())) {
-				setProcessorStatus(processor, "false", "ProcessorMissingStream");
-				throw new ApiException("Missing Stream: " + streamName);
-			}
-
-			// Should be only one. Fallback to the first if more than one.
-			// TODO perhaps we should add namespace as well?
-			if (streamList.getItems().size() > 1) {
-				LOG.warn(String.format("Many (%s) Streams with name: %s found! Only the first is used!",
-						streamList.getItems().size(), streamName));
-			}
-
-			V1alpha1Stream stream = streamList.getItems().get(0);
-
-			if (stream == null) {
-				setProcessorStatus(processor, "false", "ProcessorMissingStream");
-				throw new ApiException("MissingStream: " + sd.getName());
-			}
-			if (!isStreamReady(stream)) {
-				setProcessorStatus(processor, "false", "ProcessorStreamNotReady");
-				throw new ApiException("StreamNotReady: " + sd.getName());
-			}
+			V1alpha1Stream stream = getStream(processor, sd.getName());
 			streams.add(stream);
 		}
 		return streams;
+	}
+
+	private V1alpha1Stream getStream(V1alpha1Processor processor, String streamName) throws ApiException {
+
+		V1alpha1StreamList streamList = api.listStreamForAllNamespaces(null, null,
+				"metadata.name=" + streamName, null, null,
+				null, null, null, null, null);
+
+		if (CollectionUtils.isEmpty(streamList.getItems())) {
+			setProcessorStatus(processor, "false", "ProcessorMissingStream");
+			throw new ApiException("Missing Stream: " + streamName);
+		}
+
+		// Should be only one. Fallback to the first if more than one.
+		// TODO perhaps we should add namespace as well?
+		if (streamList.getItems().size() > 1) {
+			LOG.warn(String.format("Many (%s) Streams with name: %s found! Only the first is used!",
+					streamList.getItems().size(), streamName));
+		}
+
+		V1alpha1Stream stream = streamList.getItems().get(0);
+
+		if (stream == null) {
+			setProcessorStatus(processor, "false", "ProcessorMissingStream");
+			throw new ApiException("MissingStream: " + streamName);
+		}
+		if (!isStreamReady(stream)) {
+			setProcessorStatus(processor, "false", "ProcessorStreamNotReady");
+			throw new ApiException("StreamNotReady: " + streamName);
+		}
+
+		return stream;
 	}
 
 	public boolean isProcessorPodExists(V1alpha1Processor processor) {
@@ -233,6 +278,8 @@ public class ProcessorReconciler implements Reconciler {
 			envs.put("SPRING_RABBITMQ_PASSWORD", inServer.getVariables().get("password"));
 		}
 		envs.put("SPRING_CLOUD_STREAM_BINDINGS_INPUT_DESTINATION", inputStream.getMetadata().getName()); // TODO
+		envs.put("SPRING_CLOUD_STREAM_FUNCTION_BINDINGS_PROXY-IN-0", "input"); // TODO
+
 
 		// Assumes one output stream
 		V1alpha1Stream outputStream = outputStreams.get(0);
@@ -252,6 +299,7 @@ public class ProcessorReconciler implements Reconciler {
 			envs.put("SPRING_RABBITMQ_PASSWORD", outServer.getVariables().get("password"));
 		}
 		envs.put("SPRING_CLOUD_STREAM_BINDINGS_OUTPUT_DESTINATION", outputStream.getMetadata().getName()); // TODO
+		envs.put("SPRING_CLOUD_STREAM_FUNCTION_BINDINGS_PROXY-OUT-0", "output"); // TODO
 
 		V1Container container = body.getSpec().getTemplate().getSpec().getContainers().stream()
 				.filter(c -> "multibinder-grpc".equalsIgnoreCase(c.getName()))
@@ -266,7 +314,7 @@ public class ProcessorReconciler implements Reconciler {
 						.build())
 				.collect(Collectors.toList()));
 
-		// Add sidecar containers
+		// Add additional (UDF) containers
 		for (V1alpha1ProcessorSpecTemplateSpecContainers procContainer :
 				processor.getSpec().getTemplate().getSpec().getContainers()) {
 
@@ -281,6 +329,39 @@ public class ProcessorReconciler implements Reconciler {
 											.build())
 									.collect(Collectors.toList()))
 							.build());
+		}
+
+		// In case of SQL input enable the sql-aggregator (e.g. Flink) container
+		if (!CollectionUtils.isEmpty(processor.getSpec().getInputs().getQuery())) {
+			List<V1Volume> volumes = body.getSpec().getTemplate().getSpec()
+					.getVolumes();
+			if (CollectionUtils.isEmpty(volumes)) {
+				volumes = new ArrayList<>();
+			}
+			volumes.add(new V1VolumeBuilder()
+					.withName("config")
+					.withNewConfigMap()
+					.withName(processor.getMetadata().getName())
+					.withItems(List.of(new V1KeyToPathBuilder()
+							.withKey("application.yaml")
+							.withPath("application.yaml")
+							.build()))
+					.endConfigMap()
+					.build());
+			body.getSpec().getTemplate().getSpec().setVolumes(volumes);
+
+			V1Container sqlAggregatorContainer = yamlMapper.readValue(SQL_AGGREGATION_CONTAINER_TEMPLATE.getInputStream(), V1Container.class);
+			sqlAggregatorContainer.setEnv(List.of(new V1EnvVarBuilder()
+							.withName("SQL_AGGREGATION_KAFKASERVER")
+							.withValue("kafka." + processor.getMetadata().getNamespace() + ".svc.cluster.local:9092") // TODO
+							//.withValue("localhost:9094") // TODO
+							.build(),
+					new V1EnvVarBuilder()
+							.withName("SQL_AGGREGATION_SCHEMAREGISTRY")
+							.withValue("http://s-registry." + processor.getMetadata().getNamespace() + ".svc.cluster.local:8081") // TODO
+							//.withValue("http://localhost:8081") // TODO
+							.build()));
+			body.getSpec().getTemplate().getSpec().getContainers().add(sqlAggregatorContainer);
 		}
 
 		appsV1Api.createNamespacedDeployment(processor.getMetadata().getNamespace(), body, null, null, null);
@@ -358,5 +439,116 @@ public class ProcessorReconciler implements Reconciler {
 
 	private static Resource toResource(String uri) {
 		return new DefaultResourceLoader().getResource(uri);
+	}
+
+	private V1ConfigMap createSqlAppConfigMap(V1alpha1Processor processor,
+			List<String> sqlQueriesAndDdl) throws ApiException {
+
+		String debugQuery = "";
+		List<Integer> explainIds = new ArrayList<>();
+		if (processor.getSpec().getInputs().getDebug() != null) {
+			debugQuery = processor.getSpec().getInputs().getDebug().getQuery();
+			explainIds = processor.getSpec().getInputs().getDebug().getExplain();
+		}
+		Aggregation sqlAggregation = new Aggregation(sqlQueriesAndDdl, debugQuery, explainIds);
+		ApplicationYaml appYaml = new ApplicationYaml(new Sql(sqlAggregation));
+
+		String configMapName = processor.getMetadata().getName();
+		String configMapNamespace = processor.getMetadata().getNamespace();
+		String configMapKey = "application.yaml";
+		try {
+			String serializedContent = yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(appYaml);
+			if (configMapUpdater.configMapExists(configMapName, configMapNamespace)) {
+				return configMapUpdater.updateConfigMap(configMapName, configMapNamespace, configMapKey, serializedContent);
+			}
+			else {
+				return configMapUpdater.createConfigMap(toOwnerReference(processor),
+						configMapName, configMapNamespace, configMapKey, serializedContent);
+			}
+		}
+		catch (JsonProcessingException e) {
+			LOG.error("Failed to serialize processor config map", e);
+			throw new ApiException(e);
+		}
+	}
+
+	public static class ApplicationYaml {
+
+		private Sql sql;
+
+		public ApplicationYaml() {
+		}
+
+		public ApplicationYaml(Sql sql) {
+			this.sql = sql;
+		}
+
+		public Sql getSql() {
+			return sql;
+		}
+
+		public void setSql(Sql sql) {
+			this.sql = sql;
+		}
+	}
+
+	public static class Sql {
+
+		private Aggregation aggregation;
+
+		Sql() {
+		}
+
+		public Sql(Aggregation aggregation) {
+			this.aggregation = aggregation;
+		}
+
+		public Aggregation getAggregation() {
+			return aggregation;
+		}
+
+		public void setAggregation(Aggregation aggregation) {
+			this.aggregation = aggregation;
+		}
+	}
+
+	public static class Aggregation {
+
+		private List<String> executeSql;
+		private String continuousQuery;
+		private List<Integer> explainStatements;
+
+		public Aggregation() {
+		}
+
+		public Aggregation(List<String> executeSql, String continuousQuery, List<Integer> explainStatements) {
+			this.executeSql = executeSql;
+			this.continuousQuery = continuousQuery;
+			this.explainStatements = explainStatements;
+		}
+
+		public List<String> getExecuteSql() {
+			return executeSql;
+		}
+
+		public void setExecuteSql(List<String> executeSql) {
+			this.executeSql = executeSql;
+		}
+
+		public String getContinuousQuery() {
+			return continuousQuery;
+		}
+
+		public void setContinuousQuery(String continuousQuery) {
+			this.continuousQuery = continuousQuery;
+		}
+
+		public List<Integer> getExplainStatements() {
+			return explainStatements;
+		}
+
+		public void setExplainStatements(List<Integer> explainStatements) {
+			this.explainStatements = explainStatements;
+		}
 	}
 }

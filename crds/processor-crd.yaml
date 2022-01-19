@@ -27,6 +27,19 @@ spec:
                 inputs:
                   type: object
                   properties:
+                    query:
+                      type: array
+                      items:
+                        type: string
+                    debug:
+                      type: object
+                      properties:
+                        query:
+                          type: string
+                        explain:
+                          type: array
+                          items:
+                            type: integer
                     sources:
                       type: array
                       items:

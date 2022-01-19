@@ -10,12 +10,17 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vmware.tanzu.streaming.apis.StreamingTanzuVmwareComV1alpha1Api;
 import com.vmware.tanzu.streaming.runtime.EventRecorder;
+import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
+import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.EventsV1Api;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import okhttp3.Protocol;
 
 import org.springframework.context.annotation.Bean;
@@ -63,6 +68,16 @@ public class ApiConfig {
 		return new StreamingTanzuVmwareComV1alpha1Api(apiClient);
 	}
 
+	@Bean
+	public Lister<V1ConfigMap> configMapLister(ApiClient apiClient, SharedInformerFactory sharedInformerFactory) {
+		GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> genericApi =
+				new GenericKubernetesApi<>(V1ConfigMap.class, V1ConfigMapList.class,
+						"", "v1", "configmaps", apiClient);
+		SharedIndexInformer<V1ConfigMap> informer = sharedInformerFactory.sharedIndexInformerFor
+				(genericApi, V1ConfigMap.class, 60 * 1000L);
+		return new Lister<>(informer.getIndexer());
+	}
+	
 	@Bean
 	static ObjectMapper yamlMapper() {
 		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());

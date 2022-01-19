@@ -14,6 +14,7 @@ rules:
       - list
       - watch
       - patch
+      - create
   - apiGroups:
       - streaming.tanzu.vmware.com
     resources:
@@ -36,6 +37,7 @@ rules:
     resources:
       - services
       - pods
+      - configmaps
     verbs:
       - get
       - list

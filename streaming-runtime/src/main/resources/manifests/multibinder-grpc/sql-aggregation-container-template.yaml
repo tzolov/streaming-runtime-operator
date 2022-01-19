@@ -1,0 +1,16 @@
+name: sql-aggregator
+image: tzolov/poc-sql-aggregator:latest
+resources:
+  limits:
+    memory: "4Gi"
+  requests:
+    memory: "2Gi"
+volumeMounts:
+  - name: config
+    mountPath: /config
+ports:
+  - containerPort: 8080
+  - containerPort: 8089
+env:
+  - name: TEST
+    value: ONE
