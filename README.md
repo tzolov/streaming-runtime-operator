@@ -37,7 +37,7 @@ kubectl get processors -n streaming-runtime
 
 Also there is a dedicated ConfigMap managed by the Stream reconciler. 
 
-##### Complex Music Ranking application
+#### Provision a complex music-ranking application
 Mock music ranking application to showcase real-time streaming with (embedded) Apache Flink Streaming SQL and Spring Cloud Functions.
 It demos how to integrate complex SQL streaming aggregating ([Apache Flink](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/overview/))
 and [Spring Cloud Function](https://spring.io/projects/spring-cloud-function), using multiple binders (Kafka & Rabbit) and polyglot User Defined Functions over [gRPC SCF Adepter](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-grpc#two-operation-modes-clientserver).
