@@ -138,11 +138,12 @@ public class StreamReconciler implements Reconciler {
 				return new Result(!REQUEUE);
 			}
 			logFailureEvent(stream, e.getMessage(), e.getCode() + " - " + e.getResponseBody(), e);
-			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+
+			return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 		}
 		catch (Exception e) {
 			logFailureEvent(stream, e.getMessage(), "", e);
-			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+			return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 		}
 		return new Result(!REQUEUE);
 	}
@@ -171,7 +172,7 @@ public class StreamReconciler implements Reconciler {
 	private void logFailureEvent(V1alpha1Stream stream, String reason, String errorBody, Exception e) {
 		String message = String.format("Failed to %s for Stream %s/%s: %s",
 				reason, stream.getMetadata().getNamespace(), stream.getMetadata().getName(), errorBody);
-		LOG.error(message);
+		LOG.warn(message);
 		eventRecorder.logEvent(
 				EventRecorder.toObjectReference(stream),
 				null,

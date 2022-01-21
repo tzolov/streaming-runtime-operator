@@ -101,7 +101,7 @@ public class ClusterStreamReconciler implements Reconciler {
 			setClusterStreamStatus(clusterStream, readyStatus, reason, serverAddresses);
 
 			if (!isStatusReady) {
-				return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+				return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 			}
 		}
 		catch (ApiException e) {
@@ -110,11 +110,11 @@ public class ClusterStreamReconciler implements Reconciler {
 				return new Result(!REQUEUE);
 			}
 			logFailureEvent(clusterStream, namespace, e.getCode() + " - " + e.getResponseBody(), e);
-			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+			return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 		}
 		catch (Exception e) {
 			logFailureEvent(clusterStream, namespace, e.getMessage(), e);
-			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+			return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 		}
 		return new Result(!REQUEUE);
 	}

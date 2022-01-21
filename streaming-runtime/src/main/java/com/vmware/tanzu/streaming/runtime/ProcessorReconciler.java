@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -57,13 +56,11 @@ public class ProcessorReconciler implements Reconciler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessorReconciler.class);
 
-	private static final Pattern IN_SQL_STREAM_NAME_PATTERN = Pattern.compile("\\[\\[STREAM:(\\S*)\\]\\]", Pattern.CASE_INSENSITIVE);
-
-	private static final Resource MULTIBINDER_GRPC_DEPLOYMENT_RESOURCE =
-			toResource("classpath:manifests/multibinder-grpc/multibinder-grpc-deployment.yaml");
+	private static final Resource PROCESSOR_DEPLOYMENT_TEMAPLATE =
+			toResource("classpath:manifests/processor/streaming-runtime-processor-deployment.yaml");
 
 	private static final Resource SQL_AGGREGATION_CONTAINER_TEMPLATE =
-			toResource("classpath:manifests/multibinder-grpc/sql-aggregation-container-template.yaml");
+			toResource("classpath:manifests/processor/sql-aggregation-container-template.yaml");
 
 	private static final boolean REQUEUE = true;
 
@@ -145,13 +142,13 @@ public class ProcessorReconciler implements Reconciler {
 				}
 				else {
 					setProcessorStatus(processor, "false", "ProcessorDeploying");
-					return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+					return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 				}
 			}
 		}
 		catch (Exception e) {
 			logFailureEvent(processor, processorNamespace, e.getMessage(), e);
-			return new Result(REQUEUE, Duration.of(30, ChronoUnit.SECONDS));
+			return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 		}
 
 		return new Result(!REQUEUE);
@@ -209,7 +206,7 @@ public class ProcessorReconciler implements Reconciler {
 		try {
 			return coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
 					null,
-					"app in (uppercase-with-multibinder-grpc),streaming-runtime=" + processor.getMetadata().getName(),
+					"app in (streaming-runtime-processor),streaming-runtime=" + processor.getMetadata().getName(),
 					null, null, null, null, null).getItems().size() == 1;
 		}
 		catch (ApiException e) {
@@ -222,7 +219,7 @@ public class ProcessorReconciler implements Reconciler {
 		try {
 			return coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
 					"status.phase=Running",
-					"app in (uppercase-with-multibinder-grpc),streaming-runtime=" + processor.getMetadata().getName(),
+					"app in (streaming-runtime-processor),streaming-runtime=" + processor.getMetadata().getName(),
 					null, null, null, null, null).getItems().size() == 1;
 		}
 		catch (ApiException e) {
@@ -238,8 +235,8 @@ public class ProcessorReconciler implements Reconciler {
 		V1OwnerReference ownerReference = toOwnerReference(processor);
 
 		LOG.debug("Creating deployment {}/{}", processor.getMetadata().getNamespace(), ownerReference.getName());
-		V1Deployment body = yamlMapper.readValue(MULTIBINDER_GRPC_DEPLOYMENT_RESOURCE.getInputStream(), V1Deployment.class);
-		//body.getMetadata().setName(ownerReference.getName());
+		V1Deployment body = yamlMapper.readValue(PROCESSOR_DEPLOYMENT_TEMAPLATE.getInputStream(), V1Deployment.class);
+		body.getMetadata().setName("streaming-runtime-processor-" + ownerReference.getName());
 		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
 		body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
 
@@ -358,7 +355,8 @@ public class ProcessorReconciler implements Reconciler {
 							.build(),
 					new V1EnvVarBuilder()
 							.withName("SQL_AGGREGATION_SCHEMAREGISTRY")
-							.withValue("http://s-registry." + processor.getMetadata().getNamespace() + ".svc.cluster.local:8081") // TODO
+							.withValue("http://s-registry." + processor.getMetadata()
+									.getNamespace() + ".svc.cluster.local:8081") // TODO
 							//.withValue("http://localhost:8081") // TODO
 							.build()));
 			body.getSpec().getTemplate().getSpec().getContainers().add(sqlAggregatorContainer);
@@ -388,7 +386,7 @@ public class ProcessorReconciler implements Reconciler {
 
 	private void logFailureEvent(V1alpha1Processor processor, String namespace, String reason, Exception e) {
 		String message = String.format("Failed to deploy Processor %s: %s", processor.getMetadata().getName(), reason);
-		LOG.error(message, e);
+		LOG.warn(message, e);
 		eventRecorder.logEvent(
 				EventRecorder.toObjectReference(processor).namespace(namespace),
 				null,

@@ -110,7 +110,7 @@ kubectl port-forward svc/rabbitmq 15672:15672
    Use the `#` as a `Routing key`.
 4. From the `Queue` tab select the `pipelineOut` queue and click the `Get Messages` button.
 
-In addition, you can check the `uppercase-with-multibinder-grpc` pod for logs like:
+In addition, you can check the `streaming-runtime-processor` pod for logs like:
 ```shell
 +----+---------------+------------+---------+------------------+---------+------------+
 | op |  window_start | window_end | song_id |             name |   genre | play_count |

@@ -1,21 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: uppercase-with-multibinder-grpc
+  name: streaming-runtime-processor
   labels:
-    app: uppercase-with-multibinder-grpc
-    type: streaming-spike
-    component: uppercase-with-multibinder-grpc
+    app: streaming-runtime-processor
+    component: streaming-runtime-processor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: uppercase-with-multibinder-grpc
+      app: streaming-runtime-processor
   template:
     metadata:
       labels:
-        app: uppercase-with-multibinder-grpc
-        component: uppercase-with-multibinder-grpc
+        app: streaming-runtime-processor
+        component: streaming-runtime-processor
     spec:
       containers:
         - name: multibinder-grpc
