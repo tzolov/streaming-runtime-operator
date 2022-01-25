@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * V1alpha1ProcessorSpecTemplateSpecContainers
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-19T07:36:51.131Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T08:52:37.754Z[Etc/UTC]")
 public class V1alpha1ProcessorSpecTemplateSpecContainers {
   public static final String SERIALIZED_NAME_ENV = "env";
   @SerializedName(SERIALIZED_NAME_ENV)

@@ -43,26 +43,103 @@ spec:
                   type: object
                   additionalProperties:
                     type: string
-                payloadSchema:
+                dataSchema:
                   type: object
                   properties:
-                    namespace:
-                      type: string
-                    type:
-                      type: string
-                    name:
-                      type: string
-                    aliases:
-                      type: array
-                      items:
-                        type: string
-                    doc:
-                      type: string
-                    fields:
+                    inline:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        schema:
+                          type: string
+                        schemaUrl:
+                          type: string
+                      required: [ "type" ]
+                      oneOf:
+                        - properties:
+                          required: [ "schema" ]
+                        - properties:
+                          required: [ "schemaUrl" ]
+                    schema:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        fields:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              type:
+                                type: string
+                              logicalType:
+                                type: string
+                              optional:
+                                type: boolean
+                              watermark:
+                                type: string
+                              metadata:
+                                type: object
+                                properties:
+                                  from:
+                                    type: string
+                                  readonly:
+                                    type: boolean
+                                required: [ "from" ]
+                            required: [ "name", "type" ]
+                      required: [ "name", "namespace", "fields" ]
+                    metadataFields:
                       type: array
                       items:
                         type: object
-                        x-kubernetes-preserve-unknown-fields: true
+                        properties:
+                          name:
+                            type: string
+                          type:
+                            type: string
+                          logicalType:
+                            type: string
+                          optional:
+                            type: boolean
+                          watermark:
+                            type: string
+                          metadata:
+                            type: object
+                            properties:
+                              from:
+                                type: string
+                              readonly:
+                                type: boolean
+                            required: [ "from" ]
+                        required: [ "name", "type" ]
+                    primaryKey:
+                      type: array
+                      items:
+                        type: string
+                    timeAttributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          watermark:
+                            type: string
+                        required: [ "name" ]
+                    options:
+                      type: object
+                      additionalProperties:
+                        type: string
+                  oneOf:
+                    - properties:
+                      required: [ "inline" ]
+                    - properties:
+                      required: [ "schema" ]
             status:
               type: object
               properties:

@@ -1,121 +1,103 @@
-package com.vmware.tanzu.streaming.runtime;
+package com.vmware.tanzu.streaming.runtime.throwaway;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.vmware.tanzu.streaming.models.V1alpha1ClusterStreamStatusStorageAddressServers;
-import com.vmware.tanzu.streaming.models.V1alpha1Stream;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchema;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaMetadataFields;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaSchema;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaTimeAttributes;
-import io.kubernetes.client.openapi.ApiException;
 import org.apache.avro.LogicalType;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.SchemaParseException;
 import org.apache.flink.formats.avro.typeutils.AvroSchemaConverter;
-import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.expressions.SqlCallExpression;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.utils.EncodingUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-public class ProcessorSqlHelper {
-	private static final Logger LOG = LoggerFactory.getLogger(ProcessorReconciler.class);
+public class AvroSchemaBuilding2 {
 
-	private static final Pattern IN_SQL_STREAM_NAME_PATTERN = Pattern.compile("\\[\\[STREAM:(\\S*)\\]\\]", Pattern.CASE_INSENSITIVE);
 
 	public static final String PROCTIME = "proctime";
 
-	private String getSchemaName(V1alpha1StreamSpecDataSchema dataSchema) {
-		if (dataSchema.getInline() != null) {
-			if (dataSchema.getInline().getType().equalsIgnoreCase("avro")) {
-				try {
-					return new Schema.Parser().parse(dataSchema.getInline().getSchema()).getName();
-				}
-				catch (SchemaParseException e) {
-					throw new IllegalArgumentException("Could not parse Avro schema string.", e);
-				}
-			}
-		}
-		else if (dataSchema.getSchema() != null) {
-			return dataSchema.getSchema().getName();
-		}
-
-		throw new RuntimeException("Either inline or schema must be provided! None found");
-
+	public static void main(String[] args) throws JsonProcessingException {
+		experiment1_1();
 	}
 
-	private String substituteSqlStreamNames(String sql, Map<String, V1alpha1Stream> map) {
-		String outSql = sql;
-		for (Map.Entry<String, V1alpha1Stream> e : map.entrySet()) {
-			outSql = outSql.replace(e.getKey(), this.getSchemaName(e.getValue().getSpec().getDataSchema()));
-		}
-		return outSql;
-	}
+	public static void experiment1_1() throws JsonProcessingException {
+		String inYaml = "--- \n"
+				+ "schema: \n"
+				+ "  namespace: net.tzolov.poc.playsongs.avro\n"
+				+ "  name: SongPlays\n"
+				+ "  fields: \n"
+				+ "    - name: song_id\n"
+				+ "      type: long\n"
+				+ "    - name: album\n"
+				+ "      optional: true\n"
+				+ "      type: string\n"
+				+ "    - name: artist\n"
+				+ "      optional: true\n"
+				+ "      type: string\n"
+				+ "    - name: name\n"
+				+ "      optional: true\n"
+				+ "      type: string\n"
+				+ "    - name: genre\n"
+				+ "      type: string\n"
+				+ "    - name: duration\n"
+				+ "      optional: true\n"
+				+ "      type: long\n"
+				+ "    - name: event_time\n"
+				+ "      type: long_timestamp-millis\n"
+//				+ "      type: long\n"
+//				+ "      logicalType: timestamp-millis\n"
+				+ "    - name: timestamp2\n"
+				+ "      type: long_timestamp-millis\n"
+				+ "    - name: event_time3\n"
+				+ "      type: long_timestamp-millis\n"
+				+ "      metadata:\n"
+				+ "        from: event_time3\n"
+				+ "        readonly: true\n"
+				+ "    - name: event_time4\n"
+				+ "      type: proctime\n"
+				+ "    - name: event_time5\n"
+				+ "      type: long_timestamp-millis\n"
+				+ "      watermark: \"`event_time5` - INTERVAL '6' SECONDS\"\n"
+				+ "metadataFields:\n"
+				+ "  - name: timestamp2\n"
+				+ "    type: long_timestamp-millis\n"
+				+ "    metadata:\n"
+				+ "      from: timestamp\n"
+				+ "primaryKey: [ song_id, name ]\n"
+				+ "timeAttributes: \n"
+				+ "  - name: event_time\n"
+//				+ "    watermark: \"`event_time` - INTERVAL '1' SECOND\"\n"
+				+ "options: \n"
+				+ "  ddl.key.fields: song_id\n"
+				+ "  ddl.properties.allow.auto.create.topics: \"true\"\n"
+				+ "  ddl.properties.group.id: testGroup3\n"
+				+ "  ddl.scan.startup.mode: earliest-offset\n"
+				+ "  ddl.value.format: json\n";
 
-	public Map<String, String> getInSqlPlaceholderToStreamNameMap(List<String> sqlQueries) {
 
-		Map<String, String> placeholderToStreamMap = new HashMap<>();
+		ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+		yamlReader.registerModule(new JavaTimeModule());
 
-		if (!CollectionUtils.isEmpty(sqlQueries)) {
-			for (String sql : sqlQueries) {
-				Matcher matcher = IN_SQL_STREAM_NAME_PATTERN.matcher(sql);
+		V1alpha1StreamSpecDataSchema streamDataSchema = yamlReader.readValue(inYaml, V1alpha1StreamSpecDataSchema.class);
 
-				for (MatchResult mr : matcher.results().collect(Collectors.toList())) {
-					String placeholder = mr.group();
-					String streamName = mr.group(1);
-					LOG.info(placeholder + " -> " + streamName);
-					placeholderToStreamMap.put(placeholder, streamName);
-				}
-			}
-		}
-		return placeholderToStreamMap;
-	}
-
-	public List<String> getDdlAndSqlStatements(List<String> sqlQueries, Map<String, V1alpha1Stream> inSqlPlaceholderToStreamMap) throws ApiException {
-		List<String> executionSqlStatements = new ArrayList<>();
-
-		for (V1alpha1Stream stream : inSqlPlaceholderToStreamMap.values()) {
-			String createTableDdl = this.inferFlinkTableDdlFromStream(stream);
-			executionSqlStatements.add(createTableDdl);
-		}
-
-		if (!CollectionUtils.isEmpty(sqlQueries)) {
-			List<String> resolvedSqlQueries = sqlQueries.stream()
-					.map(sql -> this.substituteSqlStreamNames(sql, inSqlPlaceholderToStreamMap))
-					.collect(Collectors.toList());
-			executionSqlStatements.addAll(resolvedSqlQueries);
-		}
-
-		LOG.info("" + executionSqlStatements);
-		return executionSqlStatements;
-	}
-
-	private String inferFlinkTableDdlFromStream(V1alpha1Stream stream) throws ApiException {
-		V1alpha1StreamSpecDataSchema streamDataSchema = stream.getSpec().getDataSchema();
-
-		// 4. Covert the storage address server information into Flink SQL connector WITH section.
-		V1alpha1ClusterStreamStatusStorageAddressServers server = stream.getStatus()
-				.getStorageAddress().getServers().values().iterator().next();
-
-		String protocol = stream.getSpec().getProtocol();
-		String streamMetadataName = stream.getMetadata().getName();
-		Map<String, String> serverVariables = server.getVariables();
+		String protocol = "kafka";
+		String streamMetadataName = "myTestStream";
+		Map<String, String> serverVariables = new HashMap<>();
+		serverVariables.put("brokers", "http:localhost");
 
 		Map<String, String> customOptions = new HashMap<>();
 		Map<String, String> rawOptions = streamDataSchema.getOptions();
@@ -132,6 +114,7 @@ public class ProcessorSqlHelper {
 			customOptions.put("ddl.key.format", "raw");
 			customOptions.put("ddl.key.fields", "the_kafka_key");
 			customOptions.put("ddl.value.fields-include", "EXCEPT_KEY");
+			// ddlWiths.add("'scan.startup.mode' = 'earliest-offset'"); // TODO explicit
 			if (StringUtils.hasText(serverVariables.get("schemaRegistry"))) {
 				customOptions.put("ddl.value.format", "avro-confluent");
 				customOptions.put("ddl.value.avro-confluent.url", serverVariables.get("schemaRegistry"));
@@ -148,12 +131,23 @@ public class ProcessorSqlHelper {
 		Map<String, String> allOptions = new HashMap<>(rawOptions);
 		allOptions.putAll(customOptions);
 
-		return toDdlInternal(streamDataSchema, allOptions);
+		System.out.println("-------------------------------------------");
+		System.out.println(toDdlInternal(streamDataSchema, allOptions));
+		System.out.println("-------------------------------------------");
+
 	}
 
-	public String toDdlInternal(V1alpha1StreamSpecDataSchema streamDataSchema, Map<String, String> allOptions) throws ApiException {
+	public static String toDdlInternal(V1alpha1StreamSpecDataSchema streamDataSchema, Map<String, String> allOptions ) {
 
-		String dataSchemaName = getSchemaName(streamDataSchema);
+		String schemaName = streamDataSchema.getSchema().getName();
+		String schemaNamespace = streamDataSchema.getSchema().getNamespace();
+
+//		// Options
+//		Map<String, String> allOptions = streamDataSchema.getOptions();
+		Map<String, String> tableOptions = allOptions.entrySet().stream()
+				.filter(e -> e.getKey().startsWith("ddl."))
+				.collect(Collectors.toMap(e -> e.getKey().substring("ddl.".length()), Map.Entry::getValue));
+
 
 		// Extract metadata attributes as map by field names.
 		List<V1alpha1StreamSpecDataSchemaMetadataFields> metaAttributes = streamDataSchema.getMetadataFields();
@@ -177,121 +171,11 @@ public class ProcessorSqlHelper {
 
 
 		// 1. Create AVRO Schema from the CR's built-in dataSchema
-		String avroSchema = null;
-		if (streamDataSchema.getInline() != null) {
-			if (streamDataSchema.getInline().getType().equalsIgnoreCase("avro")) {
-				avroSchema = streamDataSchema.getInline().getSchema();
-			}
-		}
-		else if (streamDataSchema.getSchema() != null) {
-			avroSchema = toAvroSchema(streamDataSchema.getSchema(), metadataFields, timeAttributeMap, timeAttributeFieldMap);
-		}
-		else {
-			throw new ApiException("Either inline or schema must be provided! None found");
-		}
-
-		System.out.println(avroSchema);
-
-		// 2. Convert the AVRO schema into Flink DataType
-		org.apache.flink.table.types.DataType dataType = AvroSchemaConverter.convertToDataType(avroSchema);
-
-		Map<String, String> justAddedColumns = new ConcurrentHashMap<>();
-
-		org.apache.flink.table.api.Schema.Builder flinkSchemaBuilder =
-				org.apache.flink.table.api.Schema.newBuilder().fromRowDataType(dataType);
-
-		// Options
-		Map<String, String> tableOptions = allOptions.entrySet().stream()
-				.filter(e -> e.getKey().startsWith("ddl."))
-				.collect(Collectors.toMap(e -> e.getKey().substring("ddl.".length()), Map.Entry::getValue));
-
-		// Add column for the raw key.fields
-		if (tableOptions.containsKey("key.format") && "raw".equalsIgnoreCase(tableOptions.get("key.format"))
-				&& tableOptions.containsKey("key.fields")) {
-			String rawKeyFormatColumnName = tableOptions.get("key.fields");
-			flinkSchemaBuilder.column(rawKeyFormatColumnName, DataTypes.STRING().notNull());
-			justAddedColumns.put(rawKeyFormatColumnName, "");
-		}
-
-		// METADATA FIELDS
-		for (V1alpha1StreamSpecDataSchemaMetadataFields metadataField : metadataFields.values()) {
-			normalizeFieldType(metadataField);
-			DataType fieldDataType = toDataType(metadataField);
-			flinkSchemaBuilder.columnByMetadata(
-					metadataField.getName(),
-					fieldDataType,
-					(metadataField.getName().equalsIgnoreCase(metadataField.getMetadata()
-							.getFrom())) ? null : metadataField.getMetadata().getFrom(),
-					Optional.ofNullable(metadataField.getMetadata().getReadonly()).orElse(false));
-			justAddedColumns.put(metadataField.getName(), "");
-		}
-
-		// PRIMARY KEY
-		List<String> primaryKey = streamDataSchema.getPrimaryKey();
-		if (!CollectionUtils.isEmpty(primaryKey)) {
-			flinkSchemaBuilder.primaryKey(primaryKey);
-		}
-
-		// TIME ATTRIBUTES
-		if (!CollectionUtils.isEmpty(timeAttributeFieldMap)) {
-			for (V1alpha1StreamSpecDataSchemaMetadataFields field : timeAttributeFieldMap.values()) {
-				if (!isProcTimeAttribute(field)) {
-					// Event Time
-					flinkSchemaBuilder.watermark(field.getName(), new SqlCallExpression(field.getWatermark()));
-				}
-				else {
-					// Processing Time TODO PROCTIME MUST ALWAYS BE the LAST COLUMN !!!!
-					flinkSchemaBuilder.columnByExpression(field.getName(), new SqlCallExpression("PROCTIME()"));
-					justAddedColumns.put(field.getName(), "");
-				}
-			}
-		}
-		else {
-			for (String timeAttributeKey : timeAttributeMap.keySet()) {
-				Optional<RowType.RowField> row = ((RowType) dataType.getLogicalType()).getFields().stream()
-						.filter(f -> f.getName().equalsIgnoreCase(timeAttributeKey)).findFirst();
-
-				boolean isRowExist = row.isPresent() || justAddedColumns.containsKey(timeAttributeKey);
-				String watermark = timeAttributeMap.get(timeAttributeKey);
-				if (isRowExist) {
-					if (StringUtils.hasText(watermark)) {
-						// Event Time
-						flinkSchemaBuilder.watermark(timeAttributeKey, new SqlCallExpression(watermark));
-					}
-					else {
-						// TODO check that the existing column already has a PROCTIME time
-					}
-				}
-				else {
-					if (!StringUtils.hasText(watermark)) {
-						// PROC TIME
-						flinkSchemaBuilder.columnByExpression(timeAttributeKey, new SqlCallExpression("PROCTIME()"));
-						justAddedColumns.put(timeAttributeKey, "");
-					}
-					else {
-						throw new RuntimeException(
-								String.format("Missing table [%s] column for Event Time attribute: %s, %s",
-										dataSchemaName, timeAttributeKey, watermark));
-					}
-				}
-			}
-		}
-
-		org.apache.flink.table.api.Schema flinkSchema = flinkSchemaBuilder.build();
-
-		return new SqlPrinter().toDdl(dataSchemaName, flinkSchema, tableOptions);
-	}
-
-	private String toAvroSchema(V1alpha1StreamSpecDataSchemaSchema streamSchema,
-			Map<String, V1alpha1StreamSpecDataSchemaMetadataFields> metadataFields,
-			Map<String, String> timeAttributeMap,
-			Map<String, V1alpha1StreamSpecDataSchemaMetadataFields> timeAttributeFieldMap) {
-
-		List<V1alpha1StreamSpecDataSchemaMetadataFields> schemaFields = streamSchema.getFields();
+		List<V1alpha1StreamSpecDataSchemaMetadataFields> schemaFields = streamDataSchema.getSchema().getFields();
 
 		SchemaBuilder.FieldAssembler<Schema> recordFieldBuilder = SchemaBuilder
-				.record(streamSchema.getName())
-				.namespace(streamSchema.getNamespace())
+				.record(schemaName)
+				.namespace(schemaNamespace)
 				.fields();
 
 		for (V1alpha1StreamSpecDataSchemaMetadataFields field : schemaFields) {
@@ -319,7 +203,7 @@ public class ProcessorSqlHelper {
 				metadataFields.put(field.getName(), field);
 			}
 
-			if (!metadataFields.containsKey(field.getName()) && !isProcTimeAttribute(field)) { // Ignores the metadata attributes and the time attributes from the Avro schema
+			if (!metadataFields.containsKey(field.getName()) && !isProcTimeAttribute(field)) { // Skip the metadata and the time attributes from the Avro schema
 
 				Schema fieldTypeSchema = Schema.create(Schema.Type.valueOf(field.getType().toUpperCase()));
 
@@ -338,10 +222,55 @@ public class ProcessorSqlHelper {
 		}
 		Schema avroSchema = recordFieldBuilder.endRecord();
 
-		return avroSchema.toString(true);
+		String avroSchemaString = avroSchema.toString(true);
+		System.out.println(avroSchemaString);
+
+		// 2. Convert the AVRO schema into Flink DataType
+		org.apache.flink.table.types.DataType dataType = AvroSchemaConverter.convertToDataType(avroSchemaString);
+
+		org.apache.flink.table.api.Schema.Builder flinkSchemaBuilder =
+				org.apache.flink.table.api.Schema.newBuilder().fromRowDataType(dataType);
+
+		// METADATA FIELDS
+
+		for (V1alpha1StreamSpecDataSchemaMetadataFields metadataField : metadataFields.values()) {
+			normalizeFieldType(metadataField);
+			DataType fieldDataType = toDataType(metadataField);
+			flinkSchemaBuilder.columnByMetadata(
+					metadataField.getName(),
+					fieldDataType,
+					(metadataField.getName().equalsIgnoreCase(metadataField.getMetadata()
+							.getFrom())) ? null : metadataField.getMetadata().getFrom(),
+					Optional.ofNullable(metadataField.getMetadata().getReadonly()).orElse(false));
+		}
+
+		// PRIMARY KEY
+		List<String> primaryKey = streamDataSchema.getPrimaryKey();
+		if (!CollectionUtils.isEmpty(primaryKey)) {
+			flinkSchemaBuilder.primaryKey(primaryKey);
+		}
+
+		// TIME ATTRIBUTES
+		if (!CollectionUtils.isEmpty(timeAttributeFieldMap)) {
+			for (V1alpha1StreamSpecDataSchemaMetadataFields field : timeAttributeFieldMap.values()) {
+				if (!isProcTimeAttribute(field)) {
+					// Event Time
+					flinkSchemaBuilder.watermark(field.getName(), new SqlCallExpression(field.getWatermark()));
+				}
+				else {
+					// Processing Time TODO PROCTIME MUST ALWAYS BE the LAST COLUMN !!!!
+					flinkSchemaBuilder.columnByExpression(field.getName(), new SqlCallExpression("PROCTIME()"));
+				}
+			}
+		}
+
+		org.apache.flink.table.api.Schema flinkSchema = flinkSchemaBuilder.build();
+
+
+		return new SqlPrinter().toDdl(schemaName, flinkSchema, tableOptions);
 	}
 
-	private DataType toDataType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	public static DataType toDataType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
 		Schema fieldTypeSchema = Schema.create(Schema.Type.valueOf(field.getType().toUpperCase()));
 		if (StringUtils.hasText(field.getLogicalType())) {
 			fieldTypeSchema = new LogicalType(field.getLogicalType()).addToSchema(fieldTypeSchema); // add logical type
@@ -352,7 +281,7 @@ public class ProcessorSqlHelper {
 		return AvroSchemaConverter.convertToDataType(fieldTypeSchema.toString(false));
 	}
 
-	private void normalizeFieldType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	public static void normalizeFieldType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
 
 		// Normalize the field's type and logicalType fields
 		if (field.getType().split("_").length > 1) {
@@ -362,11 +291,11 @@ public class ProcessorSqlHelper {
 		}
 	}
 
-	private boolean isTimeAttribute(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	public static boolean isTimeAttribute(V1alpha1StreamSpecDataSchemaMetadataFields field) {
 		return isProcTimeAttribute(field) || StringUtils.hasText(field.getWatermark());
 	}
 
-	private boolean isProcTimeAttribute(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	public static boolean isProcTimeAttribute(V1alpha1StreamSpecDataSchemaMetadataFields field) {
 		return PROCTIME.equalsIgnoreCase(field.getType());
 	}
 
@@ -479,5 +408,4 @@ public class ProcessorSqlHelper {
 					.collect(Collectors.joining(String.format(",%n")));
 		}
 	}
-
 }

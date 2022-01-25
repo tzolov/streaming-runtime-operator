@@ -25,62 +25,61 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1ClusterStreamSpecStorageServers
+ * V1alpha1StreamSpecDataSchemaTimeAttributes
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T08:52:37.754Z[Etc/UTC]")
-public class V1alpha1ClusterStreamSpecStorageServers {
-  public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
-  @SerializedName(SERIALIZED_NAME_PROTOCOL)
-  private String protocol;
+public class V1alpha1StreamSpecDataSchemaTimeAttributes {
+  public static final String SERIALIZED_NAME_NAME = "name";
+  @SerializedName(SERIALIZED_NAME_NAME)
+  private String name;
 
-  public static final String SERIALIZED_NAME_URL = "url";
-  @SerializedName(SERIALIZED_NAME_URL)
-  private String url;
+  public static final String SERIALIZED_NAME_WATERMARK = "watermark";
+  @SerializedName(SERIALIZED_NAME_WATERMARK)
+  private String watermark;
 
 
-  public V1alpha1ClusterStreamSpecStorageServers protocol(String protocol) {
+  public V1alpha1StreamSpecDataSchemaTimeAttributes name(String name) {
     
-    this.protocol = protocol;
+    this.name = name;
     return this;
   }
 
    /**
-   * Get protocol
-   * @return protocol
+   * Get name
+   * @return name
   **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "")
 
-  public String getProtocol() {
-    return protocol;
+  public String getName() {
+    return name;
   }
 
 
-  public void setProtocol(String protocol) {
-    this.protocol = protocol;
+  public void setName(String name) {
+    this.name = name;
   }
 
 
-  public V1alpha1ClusterStreamSpecStorageServers url(String url) {
+  public V1alpha1StreamSpecDataSchemaTimeAttributes watermark(String watermark) {
     
-    this.url = url;
+    this.watermark = watermark;
     return this;
   }
 
    /**
-   * Get url
-   * @return url
+   * Get watermark
+   * @return watermark
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public String getUrl() {
-    return url;
+  public String getWatermark() {
+    return watermark;
   }
 
 
-  public void setUrl(String url) {
-    this.url = url;
+  public void setWatermark(String watermark) {
+    this.watermark = watermark;
   }
 
 
@@ -92,23 +91,23 @@ public class V1alpha1ClusterStreamSpecStorageServers {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpecStorageServers v1alpha1ClusterStreamSpecStorageServers = (V1alpha1ClusterStreamSpecStorageServers) o;
-    return Objects.equals(this.protocol, v1alpha1ClusterStreamSpecStorageServers.protocol) &&
-        Objects.equals(this.url, v1alpha1ClusterStreamSpecStorageServers.url);
+    V1alpha1StreamSpecDataSchemaTimeAttributes v1alpha1StreamSpecDataSchemaTimeAttributes = (V1alpha1StreamSpecDataSchemaTimeAttributes) o;
+    return Objects.equals(this.name, v1alpha1StreamSpecDataSchemaTimeAttributes.name) &&
+        Objects.equals(this.watermark, v1alpha1StreamSpecDataSchemaTimeAttributes.watermark);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(protocol, url);
+    return Objects.hash(name, watermark);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpecStorageServers {\n");
-    sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
-    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaTimeAttributes {\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
+    sb.append("    watermark: ").append(toIndentedString(watermark)).append("\n");
     sb.append("}");
     return sb.toString();
   }

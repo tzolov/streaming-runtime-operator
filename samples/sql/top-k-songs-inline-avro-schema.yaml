@@ -9,24 +9,32 @@ spec:
   streamMode: [ "read" ]
   keys: [ "album", "genre" ]
   dataSchema:
-    schema:
-      namespace: net.tzolov.poc.playsongs.avro
-      name: Songs
-      fields:
-        - name: id
-          type: long
-        - name: name
-          type: string
-        - name: album
-          type: string
-          optional: true
-        - name: artist
-          type: string
-          optional: true
-        - name: genre
-          type: string
-        - name: proctime
-          type: proctime
+    inline:
+      type: "avro"
+      schema: |
+        {
+          "type" : "record",
+          "name" : "Songs",
+          "namespace" : "net.tzolov.poc.playsongs.avro",
+          "fields" : [ {
+            "name" : "id",
+            "type" : "long"
+          }, {
+            "name" : "name",
+            "type" : "string"
+          }, {
+            "name" : "album",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "artist",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "genre",
+            "type" : "string"
+          } ]
+        }
+    timeAttributes:
+      - name: proctime
     options:
       ddl.scan.startup.mode: earliest-offset
 ---
@@ -41,21 +49,30 @@ spec:
   streamMode: [ "read" ]
   keys: [ "song_id" ]
   dataSchema:
-    schema:
-      namespace: net.tzolov.poc.playsongs.avro
-      name: PlayEvents
-      fields:
-        - name: song_id
-          type: long
-        - name: duration
-          type: long
-          optional: true
-        - name: event_time
-          type: long_timestamp-millis
-          metadata:
-            from: timestamp
-            readonly: true
-          watermark: "`event_time` - INTERVAL '30' SECONDS"
+    inline:
+      type: avro
+      schema: |
+        {
+          "type" : "record",
+          "name" : "PlayEvents",
+          "namespace" : "net.tzolov.poc.playsongs.avro",
+          "fields" : [ {
+            "name" : "song_id",
+            "type" : "long"
+          }, {
+            "name" : "duration",
+            "type" : [ "null", "long" ]
+          } ]
+        }
+    metadataFields:
+      - name: event_time
+        type: long_timestamp-millis
+        metadata:
+          from: timestamp
+          readonly: true
+    timeAttributes:
+      - name: event_time
+        watermark: "`event_time` - INTERVAL '30' SECONDS"
     options:
       ddl.scan.startup.mode: earliest-offset
 ---
@@ -70,29 +87,42 @@ spec:
   streamMode: [ "read", "write" ]
   keys: [ "name", "genre" ]
   dataSchema:
-    schema:
-      namespace: net.tzolov.poc.playsongs.avro
-      name: SongPlays
-      fields:
-        - name: song_id
-          type: long
-        - name: album
-          type: string
-          optional: true
-        - name: artist
-          type: string
-          optional: true
-        - name: name
-          type: string
-          optional: true
-        - name: genre
-          type: string
-        - name: duration
-          type: long
-          optional: true
-        - name: event_time
-          type: long_timestamp-millis
-          watermark: "`event_time` - INTERVAL '1' SECOND"
+    inline:
+      type: avro
+      schema: |
+        {
+          "type" : "record",
+          "name" : "SongPlays",
+          "namespace" : "net.tzolov.poc.playsongs.avro",
+          "fields" : [ {
+            "name" : "song_id",
+            "type" : "long"
+          }, {
+            "name" : "album",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "artist",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "name",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "genre",
+            "type" : "string"
+          }, {
+            "name" : "duration",
+            "type" : [ "null", "long" ]
+          }, {
+            "name" : "event_time",
+            "type" : {
+              "type" : "long",
+              "logicalType" : "timestamp-millis"
+            }
+          } ]
+        }
+    timeAttributes:
+      - name: event_time
+        watermark: "`event_time` - INTERVAL '1' SECOND"
     options:
       ddl.key.fields: song_id
       ddl.value.format: "json"
@@ -110,23 +140,39 @@ spec:
   streamMode: [ "read" ]
   keys: [ "song_id" ]
   dataSchema:
-    schema:
-      namespace: net.tzolov.poc.playsongs.avro
-      name: TopKSongsPerGenre
-      fields:
-        - name: window_start
-          type: long_timestamp-millis
-        - name: window_end
-          type: long_timestamp-millis
-        - name: song_id
-          type: long
-        - name: name
-          type: string
-        - name: genre
-          type: string
-        - name: song_play_count
-          type: long
-          optional: true
+    inline:
+      type: avro
+      schema: |
+        {
+          "type": "record",
+          "name": "TopKSongsPerGenre",
+          "namespace": "net.tzolov.poc.playsongs.avro",
+          "fields": [ {
+            "name": "window_start",
+            "type": {
+              "type": "long",
+              "logicalType": "timestamp-millis"
+            }
+          }, {
+            "name": "window_end",
+            "type": {
+              "type": "long",
+              "logicalType": "timestamp-millis"
+            }
+          }, {
+            "name": "song_id",
+            "type": "long"
+          }, {
+            "name": "name",
+            "type": "string"
+          }, {
+            "name": "genre",
+            "type": "string"
+          }, {
+            "name": "song_play_count",
+            "type": [ "null", "long" ]
+          } ]
+        }
     primaryKey: [ "window_start", "window_end", "song_id", "genre" ]
     options:
       ddl.connector: "upsert-kafka"

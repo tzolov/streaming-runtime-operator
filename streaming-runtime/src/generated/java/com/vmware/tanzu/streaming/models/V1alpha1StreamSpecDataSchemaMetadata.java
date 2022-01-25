@@ -25,62 +25,61 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1ClusterStreamSpecStorageServers
+ * V1alpha1StreamSpecDataSchemaMetadata
  */
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T08:52:37.754Z[Etc/UTC]")
-public class V1alpha1ClusterStreamSpecStorageServers {
-  public static final String SERIALIZED_NAME_PROTOCOL = "protocol";
-  @SerializedName(SERIALIZED_NAME_PROTOCOL)
-  private String protocol;
+public class V1alpha1StreamSpecDataSchemaMetadata {
+  public static final String SERIALIZED_NAME_FROM = "from";
+  @SerializedName(SERIALIZED_NAME_FROM)
+  private String from;
 
-  public static final String SERIALIZED_NAME_URL = "url";
-  @SerializedName(SERIALIZED_NAME_URL)
-  private String url;
+  public static final String SERIALIZED_NAME_READONLY = "readonly";
+  @SerializedName(SERIALIZED_NAME_READONLY)
+  private Boolean readonly;
 
 
-  public V1alpha1ClusterStreamSpecStorageServers protocol(String protocol) {
+  public V1alpha1StreamSpecDataSchemaMetadata from(String from) {
     
-    this.protocol = protocol;
+    this.from = from;
     return this;
   }
 
    /**
-   * Get protocol
-   * @return protocol
+   * Get from
+   * @return from
   **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "")
 
-  public String getProtocol() {
-    return protocol;
+  public String getFrom() {
+    return from;
   }
 
 
-  public void setProtocol(String protocol) {
-    this.protocol = protocol;
+  public void setFrom(String from) {
+    this.from = from;
   }
 
 
-  public V1alpha1ClusterStreamSpecStorageServers url(String url) {
+  public V1alpha1StreamSpecDataSchemaMetadata readonly(Boolean readonly) {
     
-    this.url = url;
+    this.readonly = readonly;
     return this;
   }
 
    /**
-   * Get url
-   * @return url
+   * Get readonly
+   * @return readonly
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public String getUrl() {
-    return url;
+  public Boolean getReadonly() {
+    return readonly;
   }
 
 
-  public void setUrl(String url) {
-    this.url = url;
+  public void setReadonly(Boolean readonly) {
+    this.readonly = readonly;
   }
 
 
@@ -92,23 +91,23 @@ public class V1alpha1ClusterStreamSpecStorageServers {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1ClusterStreamSpecStorageServers v1alpha1ClusterStreamSpecStorageServers = (V1alpha1ClusterStreamSpecStorageServers) o;
-    return Objects.equals(this.protocol, v1alpha1ClusterStreamSpecStorageServers.protocol) &&
-        Objects.equals(this.url, v1alpha1ClusterStreamSpecStorageServers.url);
+    V1alpha1StreamSpecDataSchemaMetadata v1alpha1StreamSpecDataSchemaMetadata = (V1alpha1StreamSpecDataSchemaMetadata) o;
+    return Objects.equals(this.from, v1alpha1StreamSpecDataSchemaMetadata.from) &&
+        Objects.equals(this.readonly, v1alpha1StreamSpecDataSchemaMetadata.readonly);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(protocol, url);
+    return Objects.hash(from, readonly);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1ClusterStreamSpecStorageServers {\n");
-    sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
-    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaMetadata {\n");
+    sb.append("    from: ").append(toIndentedString(from)).append("\n");
+    sb.append("    readonly: ").append(toIndentedString(readonly)).append("\n");
     sb.append("}");
     return sb.toString();
   }

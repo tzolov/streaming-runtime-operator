@@ -83,7 +83,7 @@ public class SqlParser {
 		for (String yp : streamYamlPaths) {
 			try {
 				V1alpha1Stream stream = toV1alpha1Stream(yp);
-				streamToTableMap.put(stream.getMetadata().getName(), stream.getSpec().getPayloadSchema().getName());
+				streamToTableMap.put(stream.getMetadata().getName(), stream.getSpec().getDataSchema().getSchema().getName());
 			}
 			catch (IOException e) {
 				e.printStackTrace();

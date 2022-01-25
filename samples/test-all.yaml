@@ -38,21 +38,6 @@ spec:
   protocol: "kafka"
   storage:
     clusterStream: "cluster-stream-kafka-1"
-  payloadSchema:
-    namespace: net.tzolov.poc.playsongs.avro
-    type: record
-    name: Song
-    fields:
-      - name: id
-        type: long
-      - name: album
-        type: string
-      - name: artist
-        type: string
-      - name: name
-        type: string
-      - name: genre
-        type: string
 ---
 apiVersion: streaming.tanzu.vmware.com/v1alpha1
 kind: Stream
