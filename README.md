@@ -61,6 +61,16 @@ a stream of play events (think: "song X was played") and a stream of song metada
 ```shell
 kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-operator/main/samples/sql/top-k-songs.yaml' -n streaming-runtime
 ```
+alternatively you can use the inline-SQL Stream data schema representation:
+```shell
+kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-operator/main/samples/sql/top-k-songs-inline-sql-schema.yaml' -n streaming-runtime
+```
+and inline-avro data schema representations:
+```shell
+kubectl apply -f 'https://raw.githubusercontent.com/tzolov/streaming-runtime-operator/main/samples/sql/top-k-songs-inline-avro-schema.yaml' -n streaming-runtime
+```
+(Note you can use interchangeably and mix the 3 data-schema formats: meta-schema, inline-avro, inline-sql).
+
 
 * Start the Songs and PlayEvents message generator. Messages are encoded in Avro, using the same schemas defined 
   by the `kafka-stream-songs` and `kafka-stream-playevents` Streams and send to the topics defined in those streams.
