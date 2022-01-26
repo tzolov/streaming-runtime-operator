@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * V1alpha1StreamSpec
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T08:52:37.754Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T14:16:25.806Z[Etc/UTC]")
 public class V1alpha1StreamSpec {
   public static final String SERIALIZED_NAME_ATTRIBUTES = "attributes";
   @SerializedName(SERIALIZED_NAME_ATTRIBUTES)

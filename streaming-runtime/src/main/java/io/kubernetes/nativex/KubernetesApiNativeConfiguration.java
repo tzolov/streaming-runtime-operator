@@ -24,6 +24,9 @@ import static org.springframework.nativex.hint.TypeAccess.DECLARED_FIELDS;
 import static org.springframework.nativex.hint.TypeAccess.DECLARED_METHODS;
 import static org.springframework.nativex.hint.TypeAccess.values;
 
+
+
+
 /**
  * These hints are inspired by <a href="https://github.com/scratches/spring-controller">
  * Dr. Dave Syer's sample Kubernetes controller</a> and the configuration therein.
@@ -43,15 +46,16 @@ import static org.springframework.nativex.hint.TypeAccess.values;
 
 @NativeHint(//
 
-		options = { "-H:+AddAllCharsets", "--enable-all-security-services", "--enable-https", "--enable-http" },
+		options = {"-H:+AddAllCharsets", "--enable-all-security-services", "--enable-https", "--enable-http"},
 		types = { //
 				@TypeHint( //
-						access = { DECLARED_CLASSES, DECLARED_CONSTRUCTORS, DECLARED_FIELDS, DECLARED_METHODS }, //
+						access = {DECLARED_CLASSES, DECLARED_CONSTRUCTORS, DECLARED_FIELDS, DECLARED_METHODS}, //
 						typeNames = { //
 								"io.kubernetes.client.informer.cache.ProcessorListener",
 								"io.kubernetes.client.extended.controller.Controller",
 								"io.kubernetes.client.util.generic.GenericKubernetesApi$StatusPatch",
 								"io.kubernetes.client.util.Watch$Response",
+								"com.vmware.tanzu.streaming.runtime.uitil.DataSchemaToDdlConverter$TableDdlInfo",
 								"com.vmware.tanzu.streaming.runtime.ProcessorReconciler$ApplicationYaml",
 								"com.vmware.tanzu.streaming.runtime.ProcessorReconciler$Sql",
 								"com.vmware.tanzu.streaming.runtime.ProcessorReconciler$Aggregation"}) //

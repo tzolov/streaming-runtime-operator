@@ -32,7 +32,7 @@ import java.util.List;
  * StreamList is a list of Stream
  */
 @ApiModel(description = "StreamList is a list of Stream")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T08:52:37.754Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T14:16:25.806Z[Etc/UTC]")
 public class V1alpha1StreamList implements io.kubernetes.client.common.KubernetesListObject {
   public static final String SERIALIZED_NAME_API_VERSION = "apiVersion";
   @SerializedName(SERIALIZED_NAME_API_VERSION)

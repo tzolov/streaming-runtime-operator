@@ -22,6 +22,8 @@ import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecTemplateSpecContai
 import com.vmware.tanzu.streaming.models.V1alpha1Stream;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamList;
 import com.vmware.tanzu.streaming.runtime.config.ProcessorConfiguration;
+import com.vmware.tanzu.streaming.runtime.uitil.DataSchemaToDdlConverter;
+import com.vmware.tanzu.streaming.runtime.uitil.QueryPlaceholderResolver;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Reconciler;
 import io.kubernetes.client.extended.controller.reconciler.Request;
@@ -71,7 +73,7 @@ public class ProcessorReconciler implements Reconciler {
 	private final ObjectMapper yamlMapper;
 	private final ConfigMapUpdater configMapUpdater;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
-	private final ProcessorSqlHelper processorSqlHelper;
+	private final DataSchemaToDdlConverter dataSchemaToDdlConverter;
 
 	public ProcessorReconciler(SharedIndexInformer<V1alpha1Processor> processorInformer,
 			StreamingTanzuVmwareComV1alpha1Api api,
@@ -79,7 +81,8 @@ public class ProcessorReconciler implements Reconciler {
 			EventRecorder eventRecorder,
 			AppsV1Api appsV1Api,
 			ObjectMapper yamlMapper,
-			ConfigMapUpdater configMapUpdater2) {
+			ConfigMapUpdater configMapUpdater,
+			DataSchemaToDdlConverter dataSchemaToDdlConverter) {
 
 		this.api = api;
 		this.processorLister = new Lister<>(processorInformer.getIndexer());
@@ -87,8 +90,8 @@ public class ProcessorReconciler implements Reconciler {
 		this.eventRecorder = eventRecorder;
 		this.appsV1Api = appsV1Api;
 		this.yamlMapper = yamlMapper;
-		this.configMapUpdater = configMapUpdater2;
-		this.processorSqlHelper = new ProcessorSqlHelper();
+		this.configMapUpdater = configMapUpdater;
+		this.dataSchemaToDdlConverter = dataSchemaToDdlConverter;
 	}
 
 	@Override
@@ -113,27 +116,33 @@ public class ProcessorReconciler implements Reconciler {
 
 
 				List<String> sqlQueries = processor.getSpec().getInputs().getQuery();
-				Map<String, V1alpha1Stream> sqlPlaceholderToStreamMap = null;
-				if (isQueryPresent(processor)) {
-					// Extract the stream names used in the SQL statements and map those to the in-query placeholders.
-					// Later the placeholders will be replaced by the Schema (e.g. Tables) names.
-					Map<String, String> sqlPlaceholderToStreamName = processorSqlHelper.getInSqlPlaceholderToStreamNameMap(sqlQueries);
 
-					// Convert the stream names into V1alpha1Stream instances to validate their definition.
-					sqlPlaceholderToStreamMap = new HashMap<>();
-					for (Map.Entry<String, String> e : sqlPlaceholderToStreamName.entrySet()) {
-						V1alpha1Stream sqlStream = getStream(processor, e.getValue());
-						sqlPlaceholderToStreamMap.put(e.getKey(), sqlStream);
-					}
-				}
+				// Extract the stream names used in the SQL statements and map those to the in-query placeholders.
+				// Later the placeholders will be replaced by the Schema (e.g. Tables) names.
+				Map<String, String> sqlPlaceholderToStreamName =
+						isQueryPresent(processor) ? QueryPlaceholderResolver.extractPlaceholders(sqlQueries) : new HashMap<>();
 
 				if (!isProcessorPodExists(processor)) {
 					createProcessorDeploymentIfMissing(processor, inputStreams, outputStreams);
 				}
 
-				if (isQueryPresent(processor) && !CollectionUtils.isEmpty(sqlPlaceholderToStreamMap)) {
-					createSqlAppConfigMap(processor,
-							processorSqlHelper.getDdlAndSqlStatements(sqlQueries, sqlPlaceholderToStreamMap));
+				if (isQueryPresent(processor) && !CollectionUtils.isEmpty(sqlPlaceholderToStreamName)) {
+					List<String> ddlStatements = new ArrayList<>();
+					Map<String, String> placeholderToSchemaNameMap = new HashMap<>();
+					for (Map.Entry<String, String> e : sqlPlaceholderToStreamName.entrySet()) {
+						String queryPlaceholder = e.getKey();
+						String streamName = e.getValue();
+						V1alpha1Stream stream = getStream(processor, streamName);
+						DataSchemaToDdlConverter.TableDdlInfo tableDdlInfo = dataSchemaToDdlConverter.createTableDdl(stream);
+						ddlStatements.add(tableDdlInfo.getTableDdl());
+						placeholderToSchemaNameMap.put(queryPlaceholder, tableDdlInfo.getTableName());
+					}
+
+					List<String> resolvedQueries = QueryPlaceholderResolver.resolveQueries(sqlQueries, placeholderToSchemaNameMap);
+
+					ddlStatements.addAll(resolvedQueries);
+
+					createSqlAppConfigMap(processor, ddlStatements);
 				}
 
 				// Status update

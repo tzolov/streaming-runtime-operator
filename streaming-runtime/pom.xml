@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.1</version>
+		<version>2.6.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.vmware.tanzu.streaming</groupId>
@@ -17,13 +17,19 @@
 	<properties>
 		<java.version>11</java.version>
 		<repackage.classifier/>
-		<spring-native.version>0.11.0-SNAPSHOT</spring-native.version>
+		<spring-native.version>0.11.2</spring-native.version>
 		<spring.rabbit.version>2.4.1</spring.rabbit.version>
-		<reflections.version>0.9.11</reflections.version>
-		<apache.flink.version>1.14.2</apache.flink.version>
+		<reflections.version>0.10.2</reflections.version>
+		<!--		<reflections.version>0.9.11</reflections.version>-->
+		<apache.flink.version>1.14.3</apache.flink.version>
 	</properties>
-	<dependencies>
 
+	<dependencies>
+		<dependency>
+			<groupId>com.github.jsqlparser</groupId>
+			<artifactId>jsqlparser</artifactId>
+			<version>4.3</version>
+		</dependency>
 		<!-- flink api is used for the SQL table inferences -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
@@ -36,6 +42,21 @@
 			<version>${apache.flink.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-sql-parser</artifactId>
+			<version>${apache.flink.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.calcite</groupId>
+			<artifactId>calcite-linq4j</artifactId>
+			<version>1.26.0</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Rabbit Admin access for Cluster Stream -->
 		<dependency>
 			<groupId>org.springframework.amqp</groupId>
 			<artifactId>spring-rabbit</artifactId>
@@ -110,6 +131,7 @@
 						<builder>paketobuildpacks/builder:tiny</builder>
 						<env>
 							<BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
+<!--							<BP_NATIVE_IMAGE_BUILD_ARGUMENTS>&#45;&#45;trace-class-initialization=com.google.common.collect.RegularImmutableMap</BP_NATIVE_IMAGE_BUILD_ARGUMENTS>-->
 						</env>
 						<name>tzolov/${project.artifactId}:${project.version}</name>
 					</image>
@@ -169,7 +191,7 @@
 			<id>native</id>
 			<properties>
 				<repackage.classifier>exec</repackage.classifier>
-				<native-buildtools.version>0.9.8</native-buildtools.version>
+				<native-buildtools.version>0.9.9</native-buildtools.version>
 			</properties>
 			<dependencies>
 				<dependency>
@@ -201,6 +223,12 @@
 								</goals>
 							</execution>
 						</executions>
+						<configuration>
+							<buildArgs>
+								<buildArg>--initialize-at-build-time=com.google.common.collect.RegularImmutableMap</buildArg>
+								<buildArg>--trace-class-initialization=com.google.common.collect.RegularImmutableMap</buildArg>
+							</buildArgs>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>

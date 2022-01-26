@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * V1alpha1StreamSpecDataSchemaInline
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T08:52:37.754Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T14:16:25.806Z[Etc/UTC]")
 public class V1alpha1StreamSpecDataSchemaInline {
   public static final String SERIALIZED_NAME_SCHEMA = "schema";
   @SerializedName(SERIALIZED_NAME_SCHEMA)
