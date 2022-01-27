@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -65,6 +66,9 @@ public class ProcessorReconciler implements Reconciler {
 			toResource("classpath:manifests/processor/sql-aggregation-container-template.yaml");
 
 	private static final boolean REQUEUE = true;
+	public static final String READY_STATUS_TYPE = "Ready";
+	public static final String TRUE = "true";
+	public static final String FALSE = "false";
 
 	private final Lister<V1alpha1Processor> processorLister;
 	private final CoreV1Api coreV1Api;
@@ -73,7 +77,7 @@ public class ProcessorReconciler implements Reconciler {
 	private final ObjectMapper yamlMapper;
 	private final ConfigMapUpdater configMapUpdater;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
-	private final DataSchemaToDdlConverter dataSchemaToDdlConverter;
+	private final DataSchemaToDdlConverter schemaToDdlConverter;
 
 	public ProcessorReconciler(SharedIndexInformer<V1alpha1Processor> processorInformer,
 			StreamingTanzuVmwareComV1alpha1Api api,
@@ -83,7 +87,6 @@ public class ProcessorReconciler implements Reconciler {
 			ObjectMapper yamlMapper,
 			ConfigMapUpdater configMapUpdater,
 			DataSchemaToDdlConverter dataSchemaToDdlConverter) {
-
 		this.api = api;
 		this.processorLister = new Lister<>(processorInformer.getIndexer());
 		this.coreV1Api = coreV1Api;
@@ -91,7 +94,7 @@ public class ProcessorReconciler implements Reconciler {
 		this.appsV1Api = appsV1Api;
 		this.yamlMapper = yamlMapper;
 		this.configMapUpdater = configMapUpdater;
-		this.dataSchemaToDdlConverter = dataSchemaToDdlConverter;
+		this.schemaToDdlConverter = dataSchemaToDdlConverter;
 	}
 
 	@Override
@@ -110,49 +113,65 @@ public class ProcessorReconciler implements Reconciler {
 		try {
 			final boolean toDelete = processor.getMetadata().getDeletionTimestamp() != null;
 
-			if (!toDelete) {
-				List<V1alpha1Stream> inputStreams = getStreams(processor, processor.getSpec().getInputs().getSources());
-				List<V1alpha1Stream> outputStreams = getStreams(processor, processor.getSpec().getOutputs());
+			if (toDelete) {
+				// Nothing to do
+				return new Result(!REQUEUE);
+			}
 
+			List<V1alpha1Stream> inputStreams = this.getValidStreams(processor,
+					processor.getSpec().getInputs().getSources());
+			List<V1alpha1Stream> outputStreams = this.getValidStreams(processor, processor.getSpec().getOutputs());
 
-				List<String> sqlQueries = processor.getSpec().getInputs().getQuery();
+			List<String> unresolvedSqlQueries = processor.getSpec().getInputs().getQuery();
 
+			if (!CollectionUtils.isEmpty(unresolvedSqlQueries)) {
 				// Extract the stream names used in the SQL statements and map those to the in-query placeholders.
-				// Later the placeholders will be replaced by the Schema (e.g. Tables) names.
-				Map<String, String> sqlPlaceholderToStreamName =
-						isQueryPresent(processor) ? QueryPlaceholderResolver.extractPlaceholders(sqlQueries) : new HashMap<>();
+				Map<String, String> placeholderToStreamNames =
+						QueryPlaceholderResolver.extractPlaceholders(unresolvedSqlQueries);
 
-				if (!isProcessorPodExists(processor)) {
-					createProcessorDeploymentIfMissing(processor, inputStreams, outputStreams);
-				}
+				if (!CollectionUtils.isEmpty(placeholderToStreamNames)) {
 
-				if (isQueryPresent(processor) && !CollectionUtils.isEmpty(sqlPlaceholderToStreamName)) {
-					List<String> ddlStatements = new ArrayList<>();
-					Map<String, String> placeholderToSchemaNameMap = new HashMap<>();
-					for (Map.Entry<String, String> e : sqlPlaceholderToStreamName.entrySet()) {
-						String queryPlaceholder = e.getKey();
+					List<String> sqlStatements = new ArrayList<>();
+
+					Map<String, String> placeholderToSchemaNames = new HashMap<>();
+
+					for (Map.Entry<String, String> e : placeholderToStreamNames.entrySet()) {
+						String placeholder = e.getKey();
 						String streamName = e.getValue();
-						V1alpha1Stream stream = getStream(processor, streamName);
-						DataSchemaToDdlConverter.TableDdlInfo tableDdlInfo = dataSchemaToDdlConverter.createTableDdl(stream);
-						ddlStatements.add(tableDdlInfo.getTableDdl());
-						placeholderToSchemaNameMap.put(queryPlaceholder, tableDdlInfo.getTableName());
+
+						// Throws ApiException if the Stream is not ready yet.
+						V1alpha1Stream stream = this.getValidStream(processor, streamName);
+
+						DataSchemaToDdlConverter.TableDdlInfo tableDdlInfo =
+								this.schemaToDdlConverter.createTableDdl(stream);
+
+						sqlStatements.add(tableDdlInfo.getTableDdl());
+
+						// map placeholder to the Schema name from the DDL.
+						placeholderToSchemaNames.put(placeholder, tableDdlInfo.getTableName());
 					}
 
-					List<String> resolvedQueries = QueryPlaceholderResolver.resolveQueries(sqlQueries, placeholderToSchemaNameMap);
+					// Replace the placeholders with the Schema's (e.g. Tables) names.
+					List<String> resolvedQueries =
+							QueryPlaceholderResolver.resolveQueries(unresolvedSqlQueries, placeholderToSchemaNames);
 
-					ddlStatements.addAll(resolvedQueries);
+					sqlStatements.addAll(resolvedQueries);
 
-					createSqlAppConfigMap(processor, ddlStatements);
+					this.createSqlAppConfigMap(processor, sqlStatements);
 				}
+			}
 
-				// Status update
-				if (isProcessorPodRunning(processor)) {
-					setProcessorStatus(processor, "true", "ProcessorDeployed");
-				}
-				else {
-					setProcessorStatus(processor, "false", "ProcessorDeploying");
-					return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
-				}
+			if (!isProcessorPodExists(processor)) {
+				this.createProcessorDeploymentIfMissing(processor, inputStreams, outputStreams);
+			}
+
+			// Status update
+			if (isProcessorPodRunning(processor)) {
+				this.setProcessorStatus(processor, TRUE, "ProcessorDeployed");
+			}
+			else {
+				this.setProcessorStatus(processor, FALSE, "ProcessorDeploying");
+				return new Result(REQUEUE, Duration.of(15, ChronoUnit.SECONDS));
 			}
 		}
 		catch (Exception e) {
@@ -163,35 +182,30 @@ public class ProcessorReconciler implements Reconciler {
 		return new Result(!REQUEUE);
 	}
 
-
-	private boolean isQueryPresent(V1alpha1Processor processor) {
-		return !CollectionUtils.isEmpty(processor.getSpec().getInputs().getQuery());
-	}
-
-	private List<V1alpha1Stream> getStreams(V1alpha1Processor processor,
+	private List<V1alpha1Stream> getValidStreams(V1alpha1Processor processor,
 			List<V1alpha1ProcessorSpecInputsSources> streamDefs) throws ApiException {
 
 		List<V1alpha1Stream> streams = new ArrayList<>();
 		for (V1alpha1ProcessorSpecInputsSources sd : streamDefs) {
-			V1alpha1Stream stream = getStream(processor, sd.getName());
+			V1alpha1Stream stream = this.getValidStream(processor, sd.getName());
 			streams.add(stream);
 		}
 		return streams;
 	}
 
-	private V1alpha1Stream getStream(V1alpha1Processor processor, String streamName) throws ApiException {
+	private V1alpha1Stream getValidStream(V1alpha1Processor processor, String streamName) throws ApiException {
 
-		V1alpha1StreamList streamList = api.listStreamForAllNamespaces(null, null,
+		V1alpha1StreamList streamList = this.api.listStreamForAllNamespaces(null, null,
 				"metadata.name=" + streamName, null, null,
 				null, null, null, null, null);
 
 		if (CollectionUtils.isEmpty(streamList.getItems())) {
-			setProcessorStatus(processor, "false", "ProcessorMissingStream");
+			this.setProcessorStatus(processor, FALSE, "ProcessorMissingStream");
 			throw new ApiException("Missing Stream: " + streamName);
 		}
 
 		// Should be only one. Fallback to the first if more than one.
-		// TODO perhaps we should add namespace as well?
+		// TODO perhaps we need to add namespace as well?
 		if (streamList.getItems().size() > 1) {
 			LOG.warn(String.format("Many (%s) Streams with name: %s found! Only the first is used!",
 					streamList.getItems().size(), streamName));
@@ -200,11 +214,11 @@ public class ProcessorReconciler implements Reconciler {
 		V1alpha1Stream stream = streamList.getItems().get(0);
 
 		if (stream == null) {
-			setProcessorStatus(processor, "false", "ProcessorMissingStream");
+			this.setProcessorStatus(processor, FALSE, "ProcessorMissingStream");
 			throw new ApiException("MissingStream: " + streamName);
 		}
 		if (!isStreamReady(stream)) {
-			setProcessorStatus(processor, "false", "ProcessorStreamNotReady");
+			this.setProcessorStatus(processor, FALSE, "ProcessorStreamNotReady");
 			throw new ApiException("StreamNotReady: " + streamName);
 		}
 
@@ -213,7 +227,7 @@ public class ProcessorReconciler implements Reconciler {
 
 	public boolean isProcessorPodExists(V1alpha1Processor processor) {
 		try {
-			return coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
+			return this.coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
 					null,
 					"app in (streaming-runtime-processor),streaming-runtime=" + processor.getMetadata().getName(),
 					null, null, null, null, null).getItems().size() == 1;
@@ -226,7 +240,7 @@ public class ProcessorReconciler implements Reconciler {
 
 	private boolean isProcessorPodRunning(V1alpha1Processor processor) {
 		try {
-			return coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
+			return this.coreV1Api.listNamespacedPod(processor.getMetadata().getNamespace(), null, null, null,
 					"status.phase=Running",
 					"app in (streaming-runtime-processor),streaming-runtime=" + processor.getMetadata().getName(),
 					null, null, null, null, null).getItems().size() == 1;
@@ -241,10 +255,10 @@ public class ProcessorReconciler implements Reconciler {
 			List<V1alpha1Stream> inputStreams, List<V1alpha1Stream> outputStreams) throws IOException, ApiException {
 
 
-		V1OwnerReference ownerReference = toOwnerReference(processor);
+		V1OwnerReference ownerReference = this.toOwnerReference(processor);
 
 		LOG.debug("Creating deployment {}/{}", processor.getMetadata().getNamespace(), ownerReference.getName());
-		V1Deployment body = yamlMapper.readValue(PROCESSOR_DEPLOYMENT_TEMAPLATE.getInputStream(), V1Deployment.class);
+		V1Deployment body = this.yamlMapper.readValue(PROCESSOR_DEPLOYMENT_TEMAPLATE.getInputStream(), V1Deployment.class);
 		body.getMetadata().setName("streaming-runtime-processor-" + ownerReference.getName());
 		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
 		body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
@@ -311,7 +325,7 @@ public class ProcessorReconciler implements Reconciler {
 				.filter(c -> "multibinder-grpc".equalsIgnoreCase(c.getName()))
 				.findFirst().get();
 
-		List<V1EnvVar> containerVariables = (container.getEnv() != null) ? container.getEnv() : new ArrayList<>();
+		List<V1EnvVar> containerVariables = Optional.ofNullable(container.getEnv()).orElse(new ArrayList<>());
 
 		containerVariables.addAll(envs.entrySet().stream()
 				.map(e -> new V1EnvVarBuilder()
@@ -338,12 +352,12 @@ public class ProcessorReconciler implements Reconciler {
 		}
 
 		// In case of SQL input enable the sql-aggregator (e.g. Flink) container
+		// TODO check for SqlAggregator Config Map instead.
 		if (!CollectionUtils.isEmpty(processor.getSpec().getInputs().getQuery())) {
-			List<V1Volume> volumes = body.getSpec().getTemplate().getSpec()
-					.getVolumes();
-			if (CollectionUtils.isEmpty(volumes)) {
-				volumes = new ArrayList<>();
-			}
+
+			List<V1Volume> volumes = Optional.ofNullable(body.getSpec().getTemplate().getSpec().getVolumes())
+					.orElse(new ArrayList<>());
+
 			volumes.add(new V1VolumeBuilder()
 					.withName("config")
 					.withNewConfigMap()
@@ -354,9 +368,12 @@ public class ProcessorReconciler implements Reconciler {
 							.build()))
 					.endConfigMap()
 					.build());
+
 			body.getSpec().getTemplate().getSpec().setVolumes(volumes);
 
-			V1Container sqlAggregatorContainer = yamlMapper.readValue(SQL_AGGREGATION_CONTAINER_TEMPLATE.getInputStream(), V1Container.class);
+			V1Container sqlAggregatorContainer =
+					this.yamlMapper.readValue(SQL_AGGREGATION_CONTAINER_TEMPLATE.getInputStream(), V1Container.class);
+
 			sqlAggregatorContainer.setEnv(List.of(new V1EnvVarBuilder()
 							.withName("SQL_AGGREGATION_KAFKASERVER")
 							.withValue("kafka." + processor.getMetadata().getNamespace() + ".svc.cluster.local:9092") // TODO
@@ -380,8 +397,8 @@ public class ProcessorReconciler implements Reconciler {
 		}
 
 		return stream.getStatus().getConditions().stream()
-				.filter(c -> "Ready".equalsIgnoreCase(c.getType()))
-				.allMatch(c -> "true".equalsIgnoreCase(c.getStatus()));
+				.filter(c -> READY_STATUS_TYPE.equalsIgnoreCase(c.getType()))
+				.allMatch(c -> TRUE.equalsIgnoreCase(c.getStatus()));
 	}
 
 	private V1OwnerReference toOwnerReference(V1alpha1Processor processor) {
@@ -396,7 +413,7 @@ public class ProcessorReconciler implements Reconciler {
 	private void logFailureEvent(V1alpha1Processor processor, String namespace, String reason, Exception e) {
 		String message = String.format("Failed to deploy Processor %s: %s", processor.getMetadata().getName(), reason);
 		LOG.warn(message, e);
-		eventRecorder.logEvent(
+		this.eventRecorder.logEvent(
 				EventRecorder.toObjectReference(processor).namespace(namespace),
 				null,
 				ProcessorConfiguration.PROCESSOR_CONTROLLER_NAME,
@@ -405,41 +422,50 @@ public class ProcessorReconciler implements Reconciler {
 				EventType.Warning);
 	}
 
-	public void setProcessorStatus(V1alpha1Processor processor, String status, String reason) {
+	private void setProcessorStatus(V1alpha1Processor processor, String status, String reason) {
 
 		if (!hasProcessorConditionChanged(processor, status, reason)) {
 			return;
 		}
 
-		String patch = String.format("" +
-						"{\"status\": " +
-						"  {\"conditions\": " +
-						"      [{ \"type\": \"%s\", \"status\": \"%s\", \"lastTransitionTime\": \"%s\", \"reason\": \"%s\"}]" +
-						"  }" +
-						"}",
-				"Ready", status, ZonedDateTime.now(ZoneOffset.UTC), reason);
+		String patch = String.format(""
+						+ "{"
+						+ " \"status\": {"
+						+ "   \"conditions\": [{ "
+						+ "     \"type\": \"%s\", "
+						+ "     \"status\": \"%s\", "
+						+ "     \"lastTransitionTime\": \"%s\", "
+						+ "     \"reason\": \"%s\""
+						+ "    }]"
+						+ "  }"
+						+ "}",
+				READY_STATUS_TYPE, status, ZonedDateTime.now(ZoneOffset.UTC), reason);
+
 		try {
-			PatchUtils.patch(
-					V1alpha1Processor.class,
-					() -> api.patchNamespacedProcessorStatusCall(
+			PatchUtils.patch(V1alpha1Processor.class,
+					() -> this.api.patchNamespacedProcessorStatusCall(
 							processor.getMetadata().getName(),
 							processor.getMetadata().getNamespace(),
-							new V1Patch(patch), null, null, null, null),
+							new V1Patch(patch),
+							null, null, null, null),
 					V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH,
-					api.getApiClient());
+					this.api.getApiClient());
 		}
-		catch (ApiException e) {
-			LOG.error("Status API call failed: {}: {}, {}, with patch {}", e.getCode(), e.getMessage(), e.getResponseBody(), patch);
+		catch (ApiException apiException) {
+			LOG.error("Status API call failed: {}: {}, {}, with patch {}",
+					apiException.getCode(), apiException.getMessage(), apiException.getResponseBody(), patch);
 		}
 	}
 
-	private boolean hasProcessorConditionChanged(V1alpha1Processor processor, String newReadyStatus, String newStatusReason) {
+	private boolean hasProcessorConditionChanged(
+			V1alpha1Processor processor, String newReadyStatus, String newStatusReason) {
+
 		if (processor.getStatus() == null || processor.getStatus().getConditions() == null) {
 			return true;
 		}
 
 		return !processor.getStatus().getConditions().stream()
-				.filter(condition -> "Ready".equalsIgnoreCase(condition.getType()))
+				.filter(condition -> READY_STATUS_TYPE.equalsIgnoreCase(condition.getType()))
 				.allMatch(condition -> newReadyStatus.equalsIgnoreCase(condition.getStatus())
 						&& newStatusReason.equalsIgnoreCase(condition.getReason()));
 	}
@@ -464,12 +490,13 @@ public class ProcessorReconciler implements Reconciler {
 		String configMapNamespace = processor.getMetadata().getNamespace();
 		String configMapKey = "application.yaml";
 		try {
-			String serializedContent = yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(appYaml);
-			if (configMapUpdater.configMapExists(configMapName, configMapNamespace)) {
-				return configMapUpdater.updateConfigMap(configMapName, configMapNamespace, configMapKey, serializedContent);
+			String serializedContent = this.yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(appYaml);
+			if (this.configMapUpdater.configMapExists(configMapName, configMapNamespace)) {
+				return this.configMapUpdater.updateConfigMap(
+						configMapName, configMapNamespace, configMapKey, serializedContent);
 			}
 			else {
-				return configMapUpdater.createConfigMap(toOwnerReference(processor),
+				return this.configMapUpdater.createConfigMap(toOwnerReference(processor),
 						configMapName, configMapNamespace, configMapKey, serializedContent);
 			}
 		}
