@@ -10,29 +10,8 @@ spec:
   keys: [ "album", "genre" ]
   dataSchema:
     inline:
-      type: "avro"
-      schema: |
-        {
-          "type" : "record",
-          "name" : "Songs",
-          "namespace" : "net.tzolov.poc.playsongs.avro",
-          "fields" : [ {
-            "name" : "id",
-            "type" : "long"
-          }, {
-            "name" : "name",
-            "type" : "string"
-          }, {
-            "name" : "album",
-            "type" : [ "null", "string" ]
-          }, {
-            "name" : "artist",
-            "type" : [ "null", "string" ]
-          }, {
-            "name" : "genre",
-            "type" : "string"
-          } ]
-        }
+      type: avro-confluent
+      schema: http://s-registry.default.svc.cluster.local:8081/subjects/kafka-stream-songs-value/versions/latest
     timeAttributes:
       - name: proctime
     options:
@@ -50,20 +29,8 @@ spec:
   keys: [ "song_id" ]
   dataSchema:
     inline:
-      type: avro
-      schema: |
-        {
-          "type" : "record",
-          "name" : "PlayEvents",
-          "namespace" : "net.tzolov.poc.playsongs.avro",
-          "fields" : [ {
-            "name" : "song_id",
-            "type" : "long"
-          }, {
-            "name" : "duration",
-            "type" : [ "null", "long" ]
-          } ]
-        }
+      type: avro-confluent
+      schema: http://s-registry.default.svc.cluster.local:8081/subjects/kafka-stream-playevents-value/versions/latest
     metadataFields:
       - name: event_time
         type: long_timestamp-millis
@@ -200,7 +167,7 @@ spec:
       - "INSERT INTO [[STREAM:kafka-stream-songplays]] 
          SELECT Plays.song_id, Songs.album, Songs.artist, Songs.name, Songs.genre, Plays.duration, Plays.event_time   
          FROM(SELECT * FROM [[STREAM:kafka-stream-playevents]] WHERE duration >= 30000) AS Plays 
-         INNER JOIN [[STREAM:kafka-stream-songs]] ON Plays.song_id = Songs.id"
+         INNER JOIN [[STREAM:kafka-stream-songs]] as Songs ON Plays.song_id = Songs.id"
 
       - "INSERT INTO [[STREAM:kafka-stream-topk-songs-per-genre]] 
          SELECT window_start, window_end, song_id, name, genre, play_count 

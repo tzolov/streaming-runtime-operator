@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * V1alpha1ClusterStreamStatusStorageAddressServers
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T14:16:25.806Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
 public class V1alpha1ClusterStreamStatusStorageAddressServers {
   public static final String SERIALIZED_NAME_DESCRIPTION = "description";
   @SerializedName(SERIALIZED_NAME_DESCRIPTION)

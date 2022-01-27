@@ -26,9 +26,11 @@ import org.apache.flink.table.types.logical.RowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 public class DataSchemaToDdlConverter {
@@ -36,6 +38,7 @@ public class DataSchemaToDdlConverter {
 	private static final Logger LOG = LoggerFactory.getLogger(DataSchemaToDdlConverter.class);
 
 	public static final String PROCTIME = "proctime";
+	public static final String INLINE_SCHEMA_TYPE_AVRO_CONFLUENT = "avro-confluent";
 	public static final String INLINE_SCHEMA_TYPE_AVRO = "avro";
 	public static final String INLINE_SCHEMA_TYPE_SQL = "sql";
 	public static final String OPTIONS_PREFIX = "ddl.";
@@ -265,6 +268,14 @@ public class DataSchemaToDdlConverter {
 		if (streamDataSchema.getInline() != null) {
 			if (streamDataSchema.getInline().getType().equalsIgnoreCase(INLINE_SCHEMA_TYPE_AVRO)) {
 				return streamDataSchema.getInline().getSchema();
+			}
+			else if (streamDataSchema.getInline().getType().equalsIgnoreCase(INLINE_SCHEMA_TYPE_AVRO_CONFLUENT)) {
+				RestTemplate restTemplate = new RestTemplateBuilder().build();
+				String schemaUrl = streamDataSchema.getInline().getSchema();
+				Map<String, ?> subject = restTemplate.getForObject(schemaUrl, Map.class);
+				String avroSchema = (String) subject.get("schema");
+				LOG.info("Schema registry schema:" + avroSchema);
+				return avroSchema;
 			}
 			else if (streamDataSchema.getInline().getType().equalsIgnoreCase(INLINE_SCHEMA_TYPE_SQL)) {
 				return this.sqlToAvroSchemaConverter.parse(streamDataSchema.getInline().getSchema())

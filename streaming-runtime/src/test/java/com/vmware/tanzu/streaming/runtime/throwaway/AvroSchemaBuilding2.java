@@ -22,6 +22,7 @@ import org.apache.flink.table.expressions.SqlCallExpression;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.utils.EncodingUtils;
 
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -31,9 +32,18 @@ public class AvroSchemaBuilding2 {
 	public static final String PROCTIME = "proctime";
 
 	public static void main(String[] args) throws JsonProcessingException {
-		experiment1_1();
+//		experiment1_1();
+		experiment2_1();
 	}
 
+	public static void experiment2_1() {
+		org.springframework.web.client.RestTemplate restTemplate = new RestTemplateBuilder().build();
+		Map subject = restTemplate.getForObject("http://localhost:8081/subjects/kafka-stream-songs-value/versions/latest", Map.class);
+		String avroSchema = (String) subject.get("schema");
+		System.out.println(avroSchema);
+		DataType dataType = AvroSchemaConverter.convertToDataType(avroSchema);
+		System.out.println(dataType);
+	}
 	public static void experiment1_1() throws JsonProcessingException {
 		String inYaml = "--- \n"
 				+ "schema: \n"

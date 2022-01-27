@@ -160,14 +160,7 @@ spec:
                           type: string
                         schema:
                           type: string
-                        schemaUrl:
-                          type: string
-                      required: [ "type" ]
-                      oneOf:
-                        - properties:
-                          required: [ "schema" ]
-                        - properties:
-                          required: [ "schemaUrl" ]
+                      required: [ "type", "schema" ]
                     schema:
                       type: object
                       properties:

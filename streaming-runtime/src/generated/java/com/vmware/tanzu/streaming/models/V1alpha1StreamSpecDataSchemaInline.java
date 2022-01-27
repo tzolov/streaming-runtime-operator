@@ -27,15 +27,11 @@ import java.io.IOException;
 /**
  * V1alpha1StreamSpecDataSchemaInline
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-25T14:16:25.806Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
 public class V1alpha1StreamSpecDataSchemaInline {
   public static final String SERIALIZED_NAME_SCHEMA = "schema";
   @SerializedName(SERIALIZED_NAME_SCHEMA)
   private String schema;
-
-  public static final String SERIALIZED_NAME_SCHEMA_URL = "schemaUrl";
-  @SerializedName(SERIALIZED_NAME_SCHEMA_URL)
-  private String schemaUrl;
 
   public static final String SERIALIZED_NAME_TYPE = "type";
   @SerializedName(SERIALIZED_NAME_TYPE)
@@ -52,8 +48,7 @@ public class V1alpha1StreamSpecDataSchemaInline {
    * Get schema
    * @return schema
   **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "")
 
   public String getSchema() {
     return schema;
@@ -62,29 +57,6 @@ public class V1alpha1StreamSpecDataSchemaInline {
 
   public void setSchema(String schema) {
     this.schema = schema;
-  }
-
-
-  public V1alpha1StreamSpecDataSchemaInline schemaUrl(String schemaUrl) {
-    
-    this.schemaUrl = schemaUrl;
-    return this;
-  }
-
-   /**
-   * Get schemaUrl
-   * @return schemaUrl
-  **/
-  @javax.annotation.Nullable
-  @ApiModelProperty(value = "")
-
-  public String getSchemaUrl() {
-    return schemaUrl;
-  }
-
-
-  public void setSchemaUrl(String schemaUrl) {
-    this.schemaUrl = schemaUrl;
   }
 
 
@@ -120,13 +92,12 @@ public class V1alpha1StreamSpecDataSchemaInline {
     }
     V1alpha1StreamSpecDataSchemaInline v1alpha1StreamSpecDataSchemaInline = (V1alpha1StreamSpecDataSchemaInline) o;
     return Objects.equals(this.schema, v1alpha1StreamSpecDataSchemaInline.schema) &&
-        Objects.equals(this.schemaUrl, v1alpha1StreamSpecDataSchemaInline.schemaUrl) &&
         Objects.equals(this.type, v1alpha1StreamSpecDataSchemaInline.type);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(schema, schemaUrl, type);
+    return Objects.hash(schema, type);
   }
 
 
@@ -135,7 +106,6 @@ public class V1alpha1StreamSpecDataSchemaInline {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1StreamSpecDataSchemaInline {\n");
     sb.append("    schema: ").append(toIndentedString(schema)).append("\n");
-    sb.append("    schemaUrl: ").append(toIndentedString(schemaUrl)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
     sb.append("}");
     return sb.toString();
