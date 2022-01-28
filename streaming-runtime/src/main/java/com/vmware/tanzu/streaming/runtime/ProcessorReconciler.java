@@ -23,7 +23,8 @@ import com.vmware.tanzu.streaming.models.V1alpha1ProcessorSpecTemplateSpecContai
 import com.vmware.tanzu.streaming.models.V1alpha1Stream;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamList;
 import com.vmware.tanzu.streaming.runtime.config.ProcessorConfiguration;
-import com.vmware.tanzu.streaming.runtime.uitil.DataSchemaToDdlConverter;
+import com.vmware.tanzu.streaming.runtime.dataschema.DataSchemaProcessingContext;
+import com.vmware.tanzu.streaming.runtime.uitil.DataSchemaToFlinkDdlConverter;
 import com.vmware.tanzu.streaming.runtime.uitil.QueryPlaceholderResolver;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.controller.reconciler.Reconciler;
@@ -59,7 +60,7 @@ public class ProcessorReconciler implements Reconciler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessorReconciler.class);
 
-	private static final Resource PROCESSOR_DEPLOYMENT_TEMAPLATE =
+	private static final Resource PROCESSOR_DEPLOYMENT_TEMPLATE =
 			toResource("classpath:manifests/processor/streaming-runtime-processor-deployment.yaml");
 
 	private static final Resource SQL_AGGREGATION_CONTAINER_TEMPLATE =
@@ -77,7 +78,7 @@ public class ProcessorReconciler implements Reconciler {
 	private final ObjectMapper yamlMapper;
 	private final ConfigMapUpdater configMapUpdater;
 	private final StreamingTanzuVmwareComV1alpha1Api api;
-	private final DataSchemaToDdlConverter schemaToDdlConverter;
+	private final DataSchemaToFlinkDdlConverter schemaToDdlConverter;
 
 	public ProcessorReconciler(SharedIndexInformer<V1alpha1Processor> processorInformer,
 			StreamingTanzuVmwareComV1alpha1Api api,
@@ -86,7 +87,7 @@ public class ProcessorReconciler implements Reconciler {
 			AppsV1Api appsV1Api,
 			ObjectMapper yamlMapper,
 			ConfigMapUpdater configMapUpdater,
-			DataSchemaToDdlConverter dataSchemaToDdlConverter) {
+			DataSchemaToFlinkDdlConverter dataSchemaToDdlConverter) {
 		this.api = api;
 		this.processorLister = new Lister<>(processorInformer.getIndexer());
 		this.coreV1Api = coreV1Api;
@@ -111,11 +112,11 @@ public class ProcessorReconciler implements Reconciler {
 		}
 
 		try {
+
 			final boolean toDelete = processor.getMetadata().getDeletionTimestamp() != null;
 
 			if (toDelete) {
-				// Nothing to do
-				return new Result(!REQUEUE);
+				return new Result(!REQUEUE); // Nothing to do
 			}
 
 			List<V1alpha1Stream> inputStreams = this.getValidStreams(processor,
@@ -142,8 +143,10 @@ public class ProcessorReconciler implements Reconciler {
 						// Throws ApiException if the Stream is not ready yet.
 						V1alpha1Stream stream = this.getValidStream(processor, streamName);
 
-						DataSchemaToDdlConverter.TableDdlInfo tableDdlInfo =
-								this.schemaToDdlConverter.createTableDdl(stream);
+						DataSchemaProcessingContext context = DataSchemaProcessingContext.of(stream);
+
+						DataSchemaToFlinkDdlConverter.TableDdlInfo tableDdlInfo =
+								this.schemaToDdlConverter.createFlinkTableDdl(context);
 
 						sqlStatements.add(tableDdlInfo.getTableDdl());
 
@@ -258,7 +261,7 @@ public class ProcessorReconciler implements Reconciler {
 		V1OwnerReference ownerReference = this.toOwnerReference(processor);
 
 		LOG.debug("Creating deployment {}/{}", processor.getMetadata().getNamespace(), ownerReference.getName());
-		V1Deployment body = this.yamlMapper.readValue(PROCESSOR_DEPLOYMENT_TEMAPLATE.getInputStream(), V1Deployment.class);
+		V1Deployment body = this.yamlMapper.readValue(PROCESSOR_DEPLOYMENT_TEMPLATE.getInputStream(), V1Deployment.class);
 		body.getMetadata().setName("streaming-runtime-processor-" + ownerReference.getName());
 		body.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
 		body.getSpec().getTemplate().getMetadata().getLabels().put("streaming-runtime", ownerReference.getName());
@@ -388,7 +391,8 @@ public class ProcessorReconciler implements Reconciler {
 			body.getSpec().getTemplate().getSpec().getContainers().add(sqlAggregatorContainer);
 		}
 
-		appsV1Api.createNamespacedDeployment(processor.getMetadata().getNamespace(), body, null, null, null);
+		this.appsV1Api.createNamespacedDeployment(
+				processor.getMetadata().getNamespace(), body, null, null, null);
 	}
 
 	private boolean isStreamReady(V1alpha1Stream stream) {

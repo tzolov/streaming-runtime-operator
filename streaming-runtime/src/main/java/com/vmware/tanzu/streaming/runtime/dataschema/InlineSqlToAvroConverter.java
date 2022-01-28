@@ -1,4 +1,4 @@
-package com.vmware.tanzu.streaming.runtime.uitil;
+package com.vmware.tanzu.streaming.runtime.dataschema;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,13 +12,32 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 /**
  * Converts a standard SQL CREATE TABLE statement into single-record Avro schema.
  */
 @Component
-public class SimpleSqlToAvroSchemaConverter {
+public class InlineSqlToAvroConverter implements DataSchemaAvroConverter {
+
+	public static final String TYPE = "sql";
+
+	@Override
+	public String getSupportedDataSchemaType() {
+		return TYPE;
+	}
+
+	@Override
+	public Schema toAvro(DataSchemaProcessingContext context) {
+
+		Assert.isTrue(getSupportedDataSchemaType().equalsIgnoreCase(
+						context.getStreamDataSchema().getInline().getType()),
+				String.format("Wrong schema representation: %s for converter type %s",
+						context.getStreamDataSchema().getInline().getType(), this.getSupportedDataSchemaType()));
+
+		return parse(context.getStreamDataSchema().getInline().getSchema());
+	}
 
 	/**
 	 * Converts a standard CREATE TABLE SQL statement into single-record Avro Schema.
@@ -34,7 +53,8 @@ public class SimpleSqlToAvroSchemaConverter {
 
 			SchemaBuilder.FieldAssembler<Schema> recordFieldBuilder = SchemaBuilder
 					.record(createTable.getTable().getName())
-					.namespace("sql.generated." + createTable.getTable().getName().toLowerCase())
+					.namespace("com.tanzu.streaming.runtime.sql.generated." + createTable.getTable().getName()
+							.toLowerCase())
 					.fields();
 
 			for (ColumnDefinition cd : createTable.getColumnDefinitions()) {
@@ -56,7 +76,7 @@ public class SimpleSqlToAvroSchemaConverter {
 		}
 	}
 
-	private static boolean isNullable(List<String> columnOptions) {
+	private boolean isNullable(List<String> columnOptions) {
 		if (CollectionUtils.isEmpty(columnOptions)) {
 			return true;
 		}
@@ -71,7 +91,7 @@ public class SimpleSqlToAvroSchemaConverter {
 	 * @param nullable Indicate if the generated avro type is nullable or not.
 	 * @return Returns an Avro type corresponding to the input SQL type.
 	 */
-	private static Schema convertToAvroSchema(String sqlType, boolean nullable) {
+	private Schema convertToAvroSchema(String sqlType, boolean nullable) {
 		int precision;
 		switch (sqlType) {
 		case "NULL":
@@ -134,11 +154,5 @@ public class SimpleSqlToAvroSchemaConverter {
 			throw new UnsupportedOperationException(
 					"Unsupported to derive Schema for type: " + sqlType);
 		}
-	}
-
-	private static Schema nullableSchema(Schema schema) {
-		return schema.isNullable()
-				? schema
-				: Schema.createUnion(SchemaBuilder.builder().nullType(), schema);
 	}
 }
