@@ -19,11 +19,11 @@ public class InlineAvroToAvroConverter implements DataSchemaAvroConverter {
 	public Schema toAvro(DataSchemaProcessingContext context) {
 
 		Assert.isTrue(getSupportedDataSchemaType().equalsIgnoreCase(
-						context.getStreamDataSchema().getInline().getType()),
+						context.getDataSchemaContext().getInline().getType()),
 				String.format("Wrong schema representation: %s for converter type %s",
-						context.getStreamDataSchema().getInline().getType(), this.getSupportedDataSchemaType()));
+						context.getDataSchemaContext().getInline().getType(), this.getSupportedDataSchemaType()));
 
-		String inlineAvroSchema = context.getStreamDataSchema().getInline().getSchema();
+		String inlineAvroSchema = context.getDataSchemaContext().getInline().getSchema();
 		return new org.apache.avro.Schema.Parser().parse(inlineAvroSchema);
 	}
 }

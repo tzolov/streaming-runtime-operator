@@ -8,7 +8,7 @@ spec:
     clusterStream: "cluster-stream-kafka-songs"
   streamMode: [ "read" ]
   keys: [ "album", "genre" ]
-  dataSchema:
+  dataSchemaContext:
     schema:
       namespace: net.tzolov.poc.playsongs.avro
       name: Songs
@@ -40,7 +40,7 @@ spec:
     clusterStream: "cluster-stream-kafka-playevents"
   streamMode: [ "read" ]
   keys: [ "song_id" ]
-  dataSchema:
+  dataSchemaContext:
     schema:
       namespace: net.tzolov.poc.playsongs.avro
       name: PlayEvents
@@ -69,7 +69,7 @@ spec:
     clusterStream: "cluster-stream-kafka-songplays"
   streamMode: [ "read", "write" ]
   keys: [ "name", "genre" ]
-  dataSchema:
+  dataSchemaContext:
     schema:
       namespace: net.tzolov.poc.playsongs.avro
       name: SongPlays
@@ -109,7 +109,7 @@ spec:
     clusterStream: cluster-stream-kafka-topk-songs-per-genre
   streamMode: [ "read" ]
   keys: [ "song_id" ]
-  dataSchema:
+  dataSchemaContext:
     schema:
       namespace: net.tzolov.poc.playsongs.avro
       name: TopKSongsPerGenre

@@ -25,10 +25,10 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1StreamSpecDataSchemaInline
+ * V1alpha1StreamSpecDataSchemaContextInline
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
-public class V1alpha1StreamSpecDataSchemaInline {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-28T15:22:14.271Z[Etc/UTC]")
+public class V1alpha1StreamSpecDataSchemaContextInline {
   public static final String SERIALIZED_NAME_SCHEMA = "schema";
   @SerializedName(SERIALIZED_NAME_SCHEMA)
   private String schema;
@@ -38,7 +38,7 @@ public class V1alpha1StreamSpecDataSchemaInline {
   private String type;
 
 
-  public V1alpha1StreamSpecDataSchemaInline schema(String schema) {
+  public V1alpha1StreamSpecDataSchemaContextInline schema(String schema) {
     
     this.schema = schema;
     return this;
@@ -60,7 +60,7 @@ public class V1alpha1StreamSpecDataSchemaInline {
   }
 
 
-  public V1alpha1StreamSpecDataSchemaInline type(String type) {
+  public V1alpha1StreamSpecDataSchemaContextInline type(String type) {
     
     this.type = type;
     return this;
@@ -90,9 +90,9 @@ public class V1alpha1StreamSpecDataSchemaInline {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1StreamSpecDataSchemaInline v1alpha1StreamSpecDataSchemaInline = (V1alpha1StreamSpecDataSchemaInline) o;
-    return Objects.equals(this.schema, v1alpha1StreamSpecDataSchemaInline.schema) &&
-        Objects.equals(this.type, v1alpha1StreamSpecDataSchemaInline.type);
+    V1alpha1StreamSpecDataSchemaContextInline v1alpha1StreamSpecDataSchemaContextInline = (V1alpha1StreamSpecDataSchemaContextInline) o;
+    return Objects.equals(this.schema, v1alpha1StreamSpecDataSchemaContextInline.schema) &&
+        Objects.equals(this.type, v1alpha1StreamSpecDataSchemaContextInline.type);
   }
 
   @Override
@@ -104,7 +104,7 @@ public class V1alpha1StreamSpecDataSchemaInline {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1StreamSpecDataSchemaInline {\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaContextInline {\n");
     sb.append("    schema: ").append(toIndentedString(schema)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
     sb.append("}");

@@ -25,10 +25,10 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1StreamSpecDataSchemaMetadata
+ * V1alpha1StreamSpecDataSchemaContextMetadata
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
-public class V1alpha1StreamSpecDataSchemaMetadata {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-28T15:22:14.271Z[Etc/UTC]")
+public class V1alpha1StreamSpecDataSchemaContextMetadata {
   public static final String SERIALIZED_NAME_FROM = "from";
   @SerializedName(SERIALIZED_NAME_FROM)
   private String from;
@@ -38,7 +38,7 @@ public class V1alpha1StreamSpecDataSchemaMetadata {
   private Boolean readonly;
 
 
-  public V1alpha1StreamSpecDataSchemaMetadata from(String from) {
+  public V1alpha1StreamSpecDataSchemaContextMetadata from(String from) {
     
     this.from = from;
     return this;
@@ -60,7 +60,7 @@ public class V1alpha1StreamSpecDataSchemaMetadata {
   }
 
 
-  public V1alpha1StreamSpecDataSchemaMetadata readonly(Boolean readonly) {
+  public V1alpha1StreamSpecDataSchemaContextMetadata readonly(Boolean readonly) {
     
     this.readonly = readonly;
     return this;
@@ -91,9 +91,9 @@ public class V1alpha1StreamSpecDataSchemaMetadata {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1StreamSpecDataSchemaMetadata v1alpha1StreamSpecDataSchemaMetadata = (V1alpha1StreamSpecDataSchemaMetadata) o;
-    return Objects.equals(this.from, v1alpha1StreamSpecDataSchemaMetadata.from) &&
-        Objects.equals(this.readonly, v1alpha1StreamSpecDataSchemaMetadata.readonly);
+    V1alpha1StreamSpecDataSchemaContextMetadata v1alpha1StreamSpecDataSchemaContextMetadata = (V1alpha1StreamSpecDataSchemaContextMetadata) o;
+    return Objects.equals(this.from, v1alpha1StreamSpecDataSchemaContextMetadata.from) &&
+        Objects.equals(this.readonly, v1alpha1StreamSpecDataSchemaContextMetadata.readonly);
   }
 
   @Override
@@ -105,7 +105,7 @@ public class V1alpha1StreamSpecDataSchemaMetadata {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1StreamSpecDataSchemaMetadata {\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaContextMetadata {\n");
     sb.append("    from: ").append(toIndentedString(from)).append("\n");
     sb.append("    readonly: ").append(toIndentedString(readonly)).append("\n");
     sb.append("}");

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaMetadataFields;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextMetadataFields;
 import com.vmware.tanzu.streaming.runtime.dataschema.DataSchemaAvroConverter;
 import com.vmware.tanzu.streaming.runtime.dataschema.DataSchemaProcessingContext;
 import org.apache.avro.LogicalType;
@@ -152,7 +152,8 @@ public class DataSchemaToFlinkDdlConverter {
 		// Retrieve schema's options and remove the prefix (e.g. make them Flink align).
 		Map<String, String> tableOptions = context.getOptions().entrySet().stream()
 				.filter(e -> e.getKey().startsWith(FLINK_OPTIONS_PREFIX))
-				.collect(Collectors.toMap(e -> e.getKey().substring(FLINK_OPTIONS_PREFIX.length()), Map.Entry::getValue));
+				.collect(Collectors.toMap(e -> e.getKey()
+						.substring(FLINK_OPTIONS_PREFIX.length()), Map.Entry::getValue));
 
 		// Add column for the raw key.fields.
 		// TODO this is an opinionated assumption that key.format = "raw" and not empty "key.fields" would have
@@ -168,7 +169,7 @@ public class DataSchemaToFlinkDdlConverter {
 		}
 
 		// METADATA FIELDS: Add the explicitly defined metadata fields as table columns.
-		for (V1alpha1StreamSpecDataSchemaMetadataFields metadataField : context.getMetadataFields().values()) {
+		for (V1alpha1StreamSpecDataSchemaContextMetadataFields metadataField : context.getMetadataFields().values()) {
 
 			normalizeFieldType(metadataField);
 
@@ -188,7 +189,7 @@ public class DataSchemaToFlinkDdlConverter {
 		}
 
 		// PRIMARY KEY: If defined convert the primary key into table primary-key constrain.
-		List<String> primaryKey = context.getStreamDataSchema().getPrimaryKey();
+		List<String> primaryKey = context.getDataSchemaContext().getPrimaryKey();
 		if (!CollectionUtils.isEmpty(primaryKey)) {
 			flinkSchemaBuilder.primaryKey(primaryKey);
 		}
@@ -232,7 +233,7 @@ public class DataSchemaToFlinkDdlConverter {
 	/**
 	 * Converts field's type into Flink DataType.
 	 */
-	private DataType dataTypeOf(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	private DataType dataTypeOf(V1alpha1StreamSpecDataSchemaContextMetadataFields field) {
 		Schema fieldTypeSchema = Schema.create(Schema.Type.valueOf(field.getType().toUpperCase()));
 		if (StringUtils.hasText(field.getLogicalType())) {
 			fieldTypeSchema = new LogicalType(field.getLogicalType()).addToSchema(fieldTypeSchema); // add logical type
@@ -247,7 +248,7 @@ public class DataSchemaToFlinkDdlConverter {
 	 * Splits Field's shortcut type-format, such as long_timestamp-millis, into type (long)
 	 * and logicalType (timestamp-millis) parts. If the type-format is not shortcut does nothing.
 	 */
-	private void normalizeFieldType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	private void normalizeFieldType(V1alpha1StreamSpecDataSchemaContextMetadataFields field) {
 		if (field.getType().split("_").length > 1) {
 			String[] typeAndLogicalType = field.getType().split("_");
 			field.setLogicalType(typeAndLogicalType[1]);

@@ -18,6 +18,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 
 public class SqlParser {
 	private static final Pattern IN_SQL_STREAM_NAME_PATTERN = Pattern.compile("\\[\\[STREAM:(\\S*)\\]\\]", Pattern.CASE_INSENSITIVE);
+
 	public static void main(String[] args) {
 //				- INSERT INTO TopKSongsPerGenre
 //		SELECT window_start, window_end, song_id, name, genre, play_count
@@ -83,7 +84,8 @@ public class SqlParser {
 		for (String yp : streamYamlPaths) {
 			try {
 				V1alpha1Stream stream = toV1alpha1Stream(yp);
-				streamToTableMap.put(stream.getMetadata().getName(), stream.getSpec().getDataSchema().getSchema().getName());
+				streamToTableMap.put(stream.getMetadata().getName(),
+						stream.getSpec().getDataSchemaContext().getSchema().getName());
 			}
 			catch (IOException e) {
 				e.printStackTrace();

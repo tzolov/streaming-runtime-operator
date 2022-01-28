@@ -2,8 +2,8 @@ package com.vmware.tanzu.streaming.runtime.dataschema;
 
 import java.util.Optional;
 
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaMetadataFields;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaSchema;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextMetadataFields;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextSchema;
 import org.apache.avro.LogicalType;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
@@ -37,9 +37,9 @@ public class MetaSchemaToAvroConverter implements DataSchemaAvroConverter {
 	@Override
 	public Schema toAvro(DataSchemaProcessingContext context) {
 
-		Assert.notNull(context.getStreamDataSchema().getSchema(), String.format("Missing schema Meta-Schema"));
+		Assert.notNull(context.getDataSchemaContext().getSchema(), String.format("Missing schema Meta-Schema"));
 
-		V1alpha1StreamSpecDataSchemaSchema streamSchema = context.getStreamDataSchema().getSchema();
+		V1alpha1StreamSpecDataSchemaContextSchema streamSchema = context.getDataSchemaContext().getSchema();
 
 		Assert.notNull(streamSchema, "Missing Meta-Schema");
 
@@ -47,7 +47,7 @@ public class MetaSchemaToAvroConverter implements DataSchemaAvroConverter {
 		SchemaBuilder.FieldAssembler<Schema> recordFieldBuilder = SchemaBuilder.record(streamSchema.getName())
 				.namespace(streamSchema.getNamespace()).fields();
 
-		for (V1alpha1StreamSpecDataSchemaMetadataFields field : streamSchema.getFields()) {
+		for (V1alpha1StreamSpecDataSchemaContextMetadataFields field : streamSchema.getFields()) {
 
 			// Normalize the field's type and logicalType fields
 			normalizeFieldType(field);
@@ -85,7 +85,7 @@ public class MetaSchemaToAvroConverter implements DataSchemaAvroConverter {
 	 * Splits Field's shortcut type-format, such as long_timestamp-millis, into type (long)
 	 * and logicalType (timestamp-millis) parts. If the type-format is not shortcut does nothing.
 	 */
-	public static void normalizeFieldType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	public static void normalizeFieldType(V1alpha1StreamSpecDataSchemaContextMetadataFields field) {
 		if (field.getType().split("_").length > 1) {
 			String[] typeAndLogicalType = field.getType().split("_");
 			field.setLogicalType(typeAndLogicalType[1]);
@@ -98,15 +98,15 @@ public class MetaSchemaToAvroConverter implements DataSchemaAvroConverter {
 	 *  1. Set the field type to 'proctime' indicating Proctime time-attribute.
 	 *  2. Add watermark attribute to the field indicating Event-Time time attribute.
 	 */
-	private boolean isTimeAttribute(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	private boolean isTimeAttribute(V1alpha1StreamSpecDataSchemaContextMetadataFields field) {
 		return isProcTimeAttribute(field) || StringUtils.hasText(field.getWatermark());
 	}
 
-	private boolean isProcTimeAttribute(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	private boolean isProcTimeAttribute(V1alpha1StreamSpecDataSchemaContextMetadataFields field) {
 		return PROC_TIME.equalsIgnoreCase(field.getType());
 	}
 
-	private Schema fieldToAvroType(V1alpha1StreamSpecDataSchemaMetadataFields field) {
+	private Schema fieldToAvroType(V1alpha1StreamSpecDataSchemaContextMetadataFields field) {
 
 		normalizeFieldType(field);
 

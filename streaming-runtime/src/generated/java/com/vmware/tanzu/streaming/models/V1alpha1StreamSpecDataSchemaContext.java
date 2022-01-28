@@ -20,10 +20,10 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaInline;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaMetadataFields;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaSchema;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaTimeAttributes;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextInline;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextMetadataFields;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextSchema;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextTimeAttributes;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
@@ -33,17 +33,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * V1alpha1StreamSpecDataSchema
+ * V1alpha1StreamSpecDataSchemaContext
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
-public class V1alpha1StreamSpecDataSchema {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-28T15:22:14.271Z[Etc/UTC]")
+public class V1alpha1StreamSpecDataSchemaContext {
   public static final String SERIALIZED_NAME_INLINE = "inline";
   @SerializedName(SERIALIZED_NAME_INLINE)
-  private V1alpha1StreamSpecDataSchemaInline inline;
+  private V1alpha1StreamSpecDataSchemaContextInline inline;
 
   public static final String SERIALIZED_NAME_METADATA_FIELDS = "metadataFields";
   @SerializedName(SERIALIZED_NAME_METADATA_FIELDS)
-  private List<V1alpha1StreamSpecDataSchemaMetadataFields> metadataFields = null;
+  private List<V1alpha1StreamSpecDataSchemaContextMetadataFields> metadataFields = null;
 
   public static final String SERIALIZED_NAME_OPTIONS = "options";
   @SerializedName(SERIALIZED_NAME_OPTIONS)
@@ -55,14 +55,14 @@ public class V1alpha1StreamSpecDataSchema {
 
   public static final String SERIALIZED_NAME_SCHEMA = "schema";
   @SerializedName(SERIALIZED_NAME_SCHEMA)
-  private V1alpha1StreamSpecDataSchemaSchema schema;
+  private V1alpha1StreamSpecDataSchemaContextSchema schema;
 
   public static final String SERIALIZED_NAME_TIME_ATTRIBUTES = "timeAttributes";
   @SerializedName(SERIALIZED_NAME_TIME_ATTRIBUTES)
-  private List<V1alpha1StreamSpecDataSchemaTimeAttributes> timeAttributes = null;
+  private List<V1alpha1StreamSpecDataSchemaContextTimeAttributes> timeAttributes = null;
 
 
-  public V1alpha1StreamSpecDataSchema inline(V1alpha1StreamSpecDataSchemaInline inline) {
+  public V1alpha1StreamSpecDataSchemaContext inline(V1alpha1StreamSpecDataSchemaContextInline inline) {
     
     this.inline = inline;
     return this;
@@ -75,23 +75,23 @@ public class V1alpha1StreamSpecDataSchema {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1alpha1StreamSpecDataSchemaInline getInline() {
+  public V1alpha1StreamSpecDataSchemaContextInline getInline() {
     return inline;
   }
 
 
-  public void setInline(V1alpha1StreamSpecDataSchemaInline inline) {
+  public void setInline(V1alpha1StreamSpecDataSchemaContextInline inline) {
     this.inline = inline;
   }
 
 
-  public V1alpha1StreamSpecDataSchema metadataFields(List<V1alpha1StreamSpecDataSchemaMetadataFields> metadataFields) {
+  public V1alpha1StreamSpecDataSchemaContext metadataFields(List<V1alpha1StreamSpecDataSchemaContextMetadataFields> metadataFields) {
     
     this.metadataFields = metadataFields;
     return this;
   }
 
-  public V1alpha1StreamSpecDataSchema addMetadataFieldsItem(V1alpha1StreamSpecDataSchemaMetadataFields metadataFieldsItem) {
+  public V1alpha1StreamSpecDataSchemaContext addMetadataFieldsItem(V1alpha1StreamSpecDataSchemaContextMetadataFields metadataFieldsItem) {
     if (this.metadataFields == null) {
       this.metadataFields = new ArrayList<>();
     }
@@ -106,23 +106,23 @@ public class V1alpha1StreamSpecDataSchema {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public List<V1alpha1StreamSpecDataSchemaMetadataFields> getMetadataFields() {
+  public List<V1alpha1StreamSpecDataSchemaContextMetadataFields> getMetadataFields() {
     return metadataFields;
   }
 
 
-  public void setMetadataFields(List<V1alpha1StreamSpecDataSchemaMetadataFields> metadataFields) {
+  public void setMetadataFields(List<V1alpha1StreamSpecDataSchemaContextMetadataFields> metadataFields) {
     this.metadataFields = metadataFields;
   }
 
 
-  public V1alpha1StreamSpecDataSchema options(Map<String, String> options) {
+  public V1alpha1StreamSpecDataSchemaContext options(Map<String, String> options) {
     
     this.options = options;
     return this;
   }
 
-  public V1alpha1StreamSpecDataSchema putOptionsItem(String key, String optionsItem) {
+  public V1alpha1StreamSpecDataSchemaContext putOptionsItem(String key, String optionsItem) {
     if (this.options == null) {
       this.options = new HashMap<>();
     }
@@ -147,13 +147,13 @@ public class V1alpha1StreamSpecDataSchema {
   }
 
 
-  public V1alpha1StreamSpecDataSchema primaryKey(List<String> primaryKey) {
+  public V1alpha1StreamSpecDataSchemaContext primaryKey(List<String> primaryKey) {
     
     this.primaryKey = primaryKey;
     return this;
   }
 
-  public V1alpha1StreamSpecDataSchema addPrimaryKeyItem(String primaryKeyItem) {
+  public V1alpha1StreamSpecDataSchemaContext addPrimaryKeyItem(String primaryKeyItem) {
     if (this.primaryKey == null) {
       this.primaryKey = new ArrayList<>();
     }
@@ -178,7 +178,7 @@ public class V1alpha1StreamSpecDataSchema {
   }
 
 
-  public V1alpha1StreamSpecDataSchema schema(V1alpha1StreamSpecDataSchemaSchema schema) {
+  public V1alpha1StreamSpecDataSchemaContext schema(V1alpha1StreamSpecDataSchemaContextSchema schema) {
     
     this.schema = schema;
     return this;
@@ -191,23 +191,23 @@ public class V1alpha1StreamSpecDataSchema {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1alpha1StreamSpecDataSchemaSchema getSchema() {
+  public V1alpha1StreamSpecDataSchemaContextSchema getSchema() {
     return schema;
   }
 
 
-  public void setSchema(V1alpha1StreamSpecDataSchemaSchema schema) {
+  public void setSchema(V1alpha1StreamSpecDataSchemaContextSchema schema) {
     this.schema = schema;
   }
 
 
-  public V1alpha1StreamSpecDataSchema timeAttributes(List<V1alpha1StreamSpecDataSchemaTimeAttributes> timeAttributes) {
+  public V1alpha1StreamSpecDataSchemaContext timeAttributes(List<V1alpha1StreamSpecDataSchemaContextTimeAttributes> timeAttributes) {
     
     this.timeAttributes = timeAttributes;
     return this;
   }
 
-  public V1alpha1StreamSpecDataSchema addTimeAttributesItem(V1alpha1StreamSpecDataSchemaTimeAttributes timeAttributesItem) {
+  public V1alpha1StreamSpecDataSchemaContext addTimeAttributesItem(V1alpha1StreamSpecDataSchemaContextTimeAttributes timeAttributesItem) {
     if (this.timeAttributes == null) {
       this.timeAttributes = new ArrayList<>();
     }
@@ -222,12 +222,12 @@ public class V1alpha1StreamSpecDataSchema {
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public List<V1alpha1StreamSpecDataSchemaTimeAttributes> getTimeAttributes() {
+  public List<V1alpha1StreamSpecDataSchemaContextTimeAttributes> getTimeAttributes() {
     return timeAttributes;
   }
 
 
-  public void setTimeAttributes(List<V1alpha1StreamSpecDataSchemaTimeAttributes> timeAttributes) {
+  public void setTimeAttributes(List<V1alpha1StreamSpecDataSchemaContextTimeAttributes> timeAttributes) {
     this.timeAttributes = timeAttributes;
   }
 
@@ -240,13 +240,13 @@ public class V1alpha1StreamSpecDataSchema {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1StreamSpecDataSchema v1alpha1StreamSpecDataSchema = (V1alpha1StreamSpecDataSchema) o;
-    return Objects.equals(this.inline, v1alpha1StreamSpecDataSchema.inline) &&
-        Objects.equals(this.metadataFields, v1alpha1StreamSpecDataSchema.metadataFields) &&
-        Objects.equals(this.options, v1alpha1StreamSpecDataSchema.options) &&
-        Objects.equals(this.primaryKey, v1alpha1StreamSpecDataSchema.primaryKey) &&
-        Objects.equals(this.schema, v1alpha1StreamSpecDataSchema.schema) &&
-        Objects.equals(this.timeAttributes, v1alpha1StreamSpecDataSchema.timeAttributes);
+    V1alpha1StreamSpecDataSchemaContext v1alpha1StreamSpecDataSchemaContext = (V1alpha1StreamSpecDataSchemaContext) o;
+    return Objects.equals(this.inline, v1alpha1StreamSpecDataSchemaContext.inline) &&
+        Objects.equals(this.metadataFields, v1alpha1StreamSpecDataSchemaContext.metadataFields) &&
+        Objects.equals(this.options, v1alpha1StreamSpecDataSchemaContext.options) &&
+        Objects.equals(this.primaryKey, v1alpha1StreamSpecDataSchemaContext.primaryKey) &&
+        Objects.equals(this.schema, v1alpha1StreamSpecDataSchemaContext.schema) &&
+        Objects.equals(this.timeAttributes, v1alpha1StreamSpecDataSchemaContext.timeAttributes);
   }
 
   @Override
@@ -258,7 +258,7 @@ public class V1alpha1StreamSpecDataSchema {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1StreamSpecDataSchema {\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaContext {\n");
     sb.append("    inline: ").append(toIndentedString(inline)).append("\n");
     sb.append("    metadataFields: ").append(toIndentedString(metadataFields)).append("\n");
     sb.append("    options: ").append(toIndentedString(options)).append("\n");

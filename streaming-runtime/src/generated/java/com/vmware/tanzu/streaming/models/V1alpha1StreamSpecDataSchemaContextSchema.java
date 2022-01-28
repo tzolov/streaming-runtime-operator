@@ -20,7 +20,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaMetadataFields;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContextMetadataFields;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
@@ -28,13 +28,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * V1alpha1StreamSpecDataSchemaSchema
+ * V1alpha1StreamSpecDataSchemaContextSchema
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
-public class V1alpha1StreamSpecDataSchemaSchema {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-28T15:22:14.271Z[Etc/UTC]")
+public class V1alpha1StreamSpecDataSchemaContextSchema {
   public static final String SERIALIZED_NAME_FIELDS = "fields";
   @SerializedName(SERIALIZED_NAME_FIELDS)
-  private List<V1alpha1StreamSpecDataSchemaMetadataFields> fields = new ArrayList<>();
+  private List<V1alpha1StreamSpecDataSchemaContextMetadataFields> fields = new ArrayList<>();
 
   public static final String SERIALIZED_NAME_NAME = "name";
   @SerializedName(SERIALIZED_NAME_NAME)
@@ -45,13 +45,13 @@ public class V1alpha1StreamSpecDataSchemaSchema {
   private String namespace;
 
 
-  public V1alpha1StreamSpecDataSchemaSchema fields(List<V1alpha1StreamSpecDataSchemaMetadataFields> fields) {
+  public V1alpha1StreamSpecDataSchemaContextSchema fields(List<V1alpha1StreamSpecDataSchemaContextMetadataFields> fields) {
     
     this.fields = fields;
     return this;
   }
 
-  public V1alpha1StreamSpecDataSchemaSchema addFieldsItem(V1alpha1StreamSpecDataSchemaMetadataFields fieldsItem) {
+  public V1alpha1StreamSpecDataSchemaContextSchema addFieldsItem(V1alpha1StreamSpecDataSchemaContextMetadataFields fieldsItem) {
     this.fields.add(fieldsItem);
     return this;
   }
@@ -62,17 +62,17 @@ public class V1alpha1StreamSpecDataSchemaSchema {
   **/
   @ApiModelProperty(required = true, value = "")
 
-  public List<V1alpha1StreamSpecDataSchemaMetadataFields> getFields() {
+  public List<V1alpha1StreamSpecDataSchemaContextMetadataFields> getFields() {
     return fields;
   }
 
 
-  public void setFields(List<V1alpha1StreamSpecDataSchemaMetadataFields> fields) {
+  public void setFields(List<V1alpha1StreamSpecDataSchemaContextMetadataFields> fields) {
     this.fields = fields;
   }
 
 
-  public V1alpha1StreamSpecDataSchemaSchema name(String name) {
+  public V1alpha1StreamSpecDataSchemaContextSchema name(String name) {
     
     this.name = name;
     return this;
@@ -94,7 +94,7 @@ public class V1alpha1StreamSpecDataSchemaSchema {
   }
 
 
-  public V1alpha1StreamSpecDataSchemaSchema namespace(String namespace) {
+  public V1alpha1StreamSpecDataSchemaContextSchema namespace(String namespace) {
     
     this.namespace = namespace;
     return this;
@@ -124,10 +124,10 @@ public class V1alpha1StreamSpecDataSchemaSchema {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1StreamSpecDataSchemaSchema v1alpha1StreamSpecDataSchemaSchema = (V1alpha1StreamSpecDataSchemaSchema) o;
-    return Objects.equals(this.fields, v1alpha1StreamSpecDataSchemaSchema.fields) &&
-        Objects.equals(this.name, v1alpha1StreamSpecDataSchemaSchema.name) &&
-        Objects.equals(this.namespace, v1alpha1StreamSpecDataSchemaSchema.namespace);
+    V1alpha1StreamSpecDataSchemaContextSchema v1alpha1StreamSpecDataSchemaContextSchema = (V1alpha1StreamSpecDataSchemaContextSchema) o;
+    return Objects.equals(this.fields, v1alpha1StreamSpecDataSchemaContextSchema.fields) &&
+        Objects.equals(this.name, v1alpha1StreamSpecDataSchemaContextSchema.name) &&
+        Objects.equals(this.namespace, v1alpha1StreamSpecDataSchemaContextSchema.namespace);
   }
 
   @Override
@@ -139,7 +139,7 @@ public class V1alpha1StreamSpecDataSchemaSchema {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1StreamSpecDataSchemaSchema {\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaContextSchema {\n");
     sb.append("    fields: ").append(toIndentedString(fields)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    namespace: ").append(toIndentedString(namespace)).append("\n");

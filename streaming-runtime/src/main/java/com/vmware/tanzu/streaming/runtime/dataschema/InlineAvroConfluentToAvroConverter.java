@@ -26,12 +26,12 @@ public class InlineAvroConfluentToAvroConverter implements DataSchemaAvroConvert
 	public Schema toAvro(DataSchemaProcessingContext context) {
 
 		Assert.isTrue(getSupportedDataSchemaType().equalsIgnoreCase(
-						context.getStreamDataSchema().getInline().getType()),
+						context.getDataSchemaContext().getInline().getType()),
 				String.format("Wrong schema representation: %s for converter type %s",
-						context.getStreamDataSchema().getInline().getType(), this.getSupportedDataSchemaType()));
+						context.getDataSchemaContext().getInline().getType(), this.getSupportedDataSchemaType()));
 
 		// Schema url pointing to remote schema registry.
-		String schemaUrl = context.getStreamDataSchema().getInline().getSchema();
+		String schemaUrl = context.getDataSchemaContext().getInline().getSchema();
 
 		// If the schema url is empty then try to generate on based on the Topic and the Schema registry URL.
 		if (!StringUtils.hasText(schemaUrl) || "default".equalsIgnoreCase(schemaUrl)) {

@@ -20,7 +20,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchema;
+import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecDataSchemaContext;
 import com.vmware.tanzu.streaming.models.V1alpha1StreamSpecStorage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -33,15 +33,15 @@ import java.util.Map;
 /**
  * V1alpha1StreamSpec
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-28T15:22:14.271Z[Etc/UTC]")
 public class V1alpha1StreamSpec {
   public static final String SERIALIZED_NAME_ATTRIBUTES = "attributes";
   @SerializedName(SERIALIZED_NAME_ATTRIBUTES)
   private Map<String, String> attributes = null;
 
-  public static final String SERIALIZED_NAME_DATA_SCHEMA = "dataSchema";
-  @SerializedName(SERIALIZED_NAME_DATA_SCHEMA)
-  private V1alpha1StreamSpecDataSchema dataSchema;
+  public static final String SERIALIZED_NAME_DATA_SCHEMA_CONTEXT = "dataSchemaContext";
+  @SerializedName(SERIALIZED_NAME_DATA_SCHEMA_CONTEXT)
+  private V1alpha1StreamSpecDataSchemaContext dataSchemaContext;
 
   public static final String SERIALIZED_NAME_KEYS = "keys";
   @SerializedName(SERIALIZED_NAME_KEYS)
@@ -91,26 +91,26 @@ public class V1alpha1StreamSpec {
   }
 
 
-  public V1alpha1StreamSpec dataSchema(V1alpha1StreamSpecDataSchema dataSchema) {
+  public V1alpha1StreamSpec dataSchemaContext(V1alpha1StreamSpecDataSchemaContext dataSchemaContext) {
     
-    this.dataSchema = dataSchema;
+    this.dataSchemaContext = dataSchemaContext;
     return this;
   }
 
    /**
-   * Get dataSchema
-   * @return dataSchema
+   * Get dataSchemaContext
+   * @return dataSchemaContext
   **/
   @javax.annotation.Nullable
   @ApiModelProperty(value = "")
 
-  public V1alpha1StreamSpecDataSchema getDataSchema() {
-    return dataSchema;
+  public V1alpha1StreamSpecDataSchemaContext getDataSchemaContext() {
+    return dataSchemaContext;
   }
 
 
-  public void setDataSchema(V1alpha1StreamSpecDataSchema dataSchema) {
-    this.dataSchema = dataSchema;
+  public void setDataSchemaContext(V1alpha1StreamSpecDataSchemaContext dataSchemaContext) {
+    this.dataSchemaContext = dataSchemaContext;
   }
 
 
@@ -232,7 +232,7 @@ public class V1alpha1StreamSpec {
     }
     V1alpha1StreamSpec v1alpha1StreamSpec = (V1alpha1StreamSpec) o;
     return Objects.equals(this.attributes, v1alpha1StreamSpec.attributes) &&
-        Objects.equals(this.dataSchema, v1alpha1StreamSpec.dataSchema) &&
+        Objects.equals(this.dataSchemaContext, v1alpha1StreamSpec.dataSchemaContext) &&
         Objects.equals(this.keys, v1alpha1StreamSpec.keys) &&
         Objects.equals(this.protocol, v1alpha1StreamSpec.protocol) &&
         Objects.equals(this.storage, v1alpha1StreamSpec.storage) &&
@@ -241,7 +241,7 @@ public class V1alpha1StreamSpec {
 
   @Override
   public int hashCode() {
-    return Objects.hash(attributes, dataSchema, keys, protocol, storage, streamMode);
+    return Objects.hash(attributes, dataSchemaContext, keys, protocol, storage, streamMode);
   }
 
 
@@ -250,7 +250,7 @@ public class V1alpha1StreamSpec {
     StringBuilder sb = new StringBuilder();
     sb.append("class V1alpha1StreamSpec {\n");
     sb.append("    attributes: ").append(toIndentedString(attributes)).append("\n");
-    sb.append("    dataSchema: ").append(toIndentedString(dataSchema)).append("\n");
+    sb.append("    dataSchemaContext: ").append(toIndentedString(dataSchemaContext)).append("\n");
     sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
     sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
     sb.append("    storage: ").append(toIndentedString(storage)).append("\n");

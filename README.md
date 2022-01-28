@@ -174,6 +174,6 @@ The `./scripts/all.sh` combines above two steps.
 
 ```shell
 ./mvnw clean install -Pnative -DskipTests spring-boot:build-image
-docker push tzolov/streaming-runtime:0.0.2-SNAPSHOT
+docker push tzolov/streaming-runtime:0.0.3-SNAPSHOT
 ```
 (For no-native build remove the `-Pnative`).

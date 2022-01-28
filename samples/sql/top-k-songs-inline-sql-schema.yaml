@@ -8,7 +8,7 @@ spec:
     clusterStream: "cluster-stream-kafka-songs"
   streamMode: [ "read" ]
   keys: [ "album", "genre" ]
-  dataSchema:
+  dataSchemaContext:
     inline:
       type: "sql"
       schema: |
@@ -34,7 +34,7 @@ spec:
     clusterStream: "cluster-stream-kafka-playevents"
   streamMode: [ "read" ]
   keys: [ "song_id" ]
-  dataSchema:
+  dataSchemaContext:
     inline:
       type: sql
       schema: |
@@ -64,7 +64,7 @@ spec:
     clusterStream: "cluster-stream-kafka-songplays"
   streamMode: [ "read", "write" ]
   keys: [ "name", "genre" ]
-  dataSchema:
+  dataSchemaContext:
     inline:
       type: sql
       schema: |
@@ -96,7 +96,7 @@ spec:
     clusterStream: cluster-stream-kafka-topk-songs-per-genre
   streamMode: [ "read" ]
   keys: [ "song_id" ]
-  dataSchema:
+  dataSchemaContext:
     inline:
       type: sql
       schema: |

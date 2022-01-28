@@ -25,10 +25,10 @@ import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
 
 /**
- * V1alpha1StreamSpecDataSchemaTimeAttributes
+ * V1alpha1StreamSpecDataSchemaContextTimeAttributes
  */
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-27T17:48:20.710Z[Etc/UTC]")
-public class V1alpha1StreamSpecDataSchemaTimeAttributes {
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2022-01-28T15:22:14.271Z[Etc/UTC]")
+public class V1alpha1StreamSpecDataSchemaContextTimeAttributes {
   public static final String SERIALIZED_NAME_NAME = "name";
   @SerializedName(SERIALIZED_NAME_NAME)
   private String name;
@@ -38,7 +38,7 @@ public class V1alpha1StreamSpecDataSchemaTimeAttributes {
   private String watermark;
 
 
-  public V1alpha1StreamSpecDataSchemaTimeAttributes name(String name) {
+  public V1alpha1StreamSpecDataSchemaContextTimeAttributes name(String name) {
     
     this.name = name;
     return this;
@@ -60,7 +60,7 @@ public class V1alpha1StreamSpecDataSchemaTimeAttributes {
   }
 
 
-  public V1alpha1StreamSpecDataSchemaTimeAttributes watermark(String watermark) {
+  public V1alpha1StreamSpecDataSchemaContextTimeAttributes watermark(String watermark) {
     
     this.watermark = watermark;
     return this;
@@ -91,9 +91,9 @@ public class V1alpha1StreamSpecDataSchemaTimeAttributes {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    V1alpha1StreamSpecDataSchemaTimeAttributes v1alpha1StreamSpecDataSchemaTimeAttributes = (V1alpha1StreamSpecDataSchemaTimeAttributes) o;
-    return Objects.equals(this.name, v1alpha1StreamSpecDataSchemaTimeAttributes.name) &&
-        Objects.equals(this.watermark, v1alpha1StreamSpecDataSchemaTimeAttributes.watermark);
+    V1alpha1StreamSpecDataSchemaContextTimeAttributes v1alpha1StreamSpecDataSchemaContextTimeAttributes = (V1alpha1StreamSpecDataSchemaContextTimeAttributes) o;
+    return Objects.equals(this.name, v1alpha1StreamSpecDataSchemaContextTimeAttributes.name) &&
+        Objects.equals(this.watermark, v1alpha1StreamSpecDataSchemaContextTimeAttributes.watermark);
   }
 
   @Override
@@ -105,7 +105,7 @@ public class V1alpha1StreamSpecDataSchemaTimeAttributes {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class V1alpha1StreamSpecDataSchemaTimeAttributes {\n");
+    sb.append("class V1alpha1StreamSpecDataSchemaContextTimeAttributes {\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    watermark: ").append(toIndentedString(watermark)).append("\n");
     sb.append("}");
